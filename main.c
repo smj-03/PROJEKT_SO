@@ -1,16 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <time.h>
 
 #include "utilities.h"
 
+#define PROCESS_NAME "MAIN"
 #define PROCESS_NUMBER 1
 
-int main(void) {
-    char* processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY"};
-
+int main(int argc, char *argv[]) {
+    char *processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY"};
 
     for (int i = 0; i < PROCESS_NUMBER; i++) {
         switch (fork()) {
@@ -18,16 +15,16 @@ int main(void) {
                 perror("fork");
                 exit(1);
             case 0:
-                printf("I am the child\n");
+                log_message(PROCESS_NAME, "I'm the child\n");
                 char path[20];
                 get_process_path(path, processes[i]);
                 const int execVal = execl(path, processes[i], NULL);
                 if (execVal == -1) {
-                    perror("execvp");
+                    log_error(PROCESS_NAME, errno, "DUPA!!");
                     exit(1);
                 }
             default:
-                printf("I am the parent\n");
+                log_message(PROCESS_NAME, "I'm the parent\n");
         }
     }
 
