@@ -22,9 +22,9 @@ add_executable(PASSENGER_FACTORY passenger_factory.c)
 add_executable(PASSENGER passenger.c)
 add_executable(PROJEKT_SO main.c)
 
-add_library(UTILITES STATIC utilites.c)
+add_library(UTILITIES STATIC utilities.c)
 foreach(exe ${EXECUTABLES})
-    target_link_libraries(${exe} UTILITES)
+    target_link_libraries(${exe} UTILITIES)
 endforeach()
 
 foreach(exe ${EXECUTABLES})
