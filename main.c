@@ -4,10 +4,11 @@
 #include "utilities.h"
 
 #define PROCESS_NAME "MAIN"
-#define PROCESS_NUMBER 1
+#define PROCESS_NUMBER 2
 
 int main(int argc, char *argv[]) {
-    char *processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY"};
+    log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
+    char *processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY", "TRAIN"};
 
     for (int i = 0; i < PROCESS_NUMBER; i++) {
         switch (fork()) {
@@ -16,7 +17,6 @@ int main(int argc, char *argv[]) {
                 exit(1);
 
             case 0:
-                log_message(PROCESS_NAME, "Spawning %s process\n", processes[i]);
                 char path[20];
                 get_process_path(path, processes[i]);
                 const int execVal = execl(path, processes[i], NULL);
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
                 }
 
             default:
-                log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
+                log_message(PROCESS_NAME, "Spawning %s process\n", processes[i]);
         }
     }
 

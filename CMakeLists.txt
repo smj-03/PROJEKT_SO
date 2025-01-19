@@ -4,16 +4,26 @@ project(PROJEKT_SO C)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_BUILD_TYPE Debug)
 
-add_library(UTILITES STATIC utilites.c)
+set(EXECUTABLES
+        TRAIN
+        PASSENGER_FACTORY
+        PASSENGER
+        PROJEKT_SO
+)
 
+add_executable(TRAIN train.c)
 add_executable(PASSENGER_FACTORY passenger_factory.c)
-target_link_libraries(PASSENGER_FACTORY UTILITES)
-
 add_executable(PASSENGER passenger.c)
-target_link_libraries(PASSENGER UTILITES)
+add_executable(PROJEKT_SO main.c)
 
-add_executable(PROJEKT_SO main.c utilities.h)
-target_link_libraries(PROJEKT_SO UTILITES)
+add_library(UTILITES STATIC utilites.c)
+foreach(exe ${EXECUTABLES})
+    target_link_libraries(${exe} UTILITES)
+endforeach()
 
-add_dependencies(PROJEKT_SO PASSENGER_FACTORY)
-add_dependencies(PROJEKT_SO PASSENGER)
+foreach(exe ${EXECUTABLES})
+    if(exe STREQUAL "PROJEKT_SO")
+        continue()
+    endif()
+    add_dependencies(PROJEKT_SO ${exe})
+endforeach()
