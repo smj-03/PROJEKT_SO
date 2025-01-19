@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <stdarg.h>
 
 int log_message(const char *_process_name, const char *_format, ...);
 

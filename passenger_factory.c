@@ -1,9 +1,6 @@
 //
 // Created by Szymon on 1/19/2025.
 //
-
-#include <unistd.h>
-
 #include "utilities.h"
 
 #define PROCESS_NAME "PASSENGER FACTORY"

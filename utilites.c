@@ -1,15 +1,7 @@
 //
 // Created by Szymon on 1/19/2025.
 //
-
-#include <stdio.h>
-
 #include "utilities.h"
-
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <time.h>
 
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_RED     "\x1b[31m"
@@ -71,7 +63,7 @@ int log_error(const char *_process_name, const int error_code, const char *_form
 
     if (error_code != 0) {
         fprintf(stderr, ": %s\n", strerror(error_code));
-    }
+    } else fprintf(stderr, "\n");
 
 
     fflush(stderr);

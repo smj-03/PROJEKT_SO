@@ -1,6 +1,3 @@
-#include <unistd.h>
-#include <sys/wait.h>
-
 #include "utilities.h"
 
 #define PROCESS_NAME "MAIN"
