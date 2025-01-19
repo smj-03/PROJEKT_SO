@@ -10,7 +10,9 @@
 int main(int argc, char *argv[]) {
     srand(time(NULL));
 
-    while (1) {
+    int a = 1;
+    while (a) {
+        a--;
         int interval = get_random_number(MIN_INTERVAL, MAX_INTERVAL);
         if (interval <= 5) interval = 0;
 

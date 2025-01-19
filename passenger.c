@@ -18,6 +18,8 @@ struct passenger {
 
 void init_passenger(struct passenger *, int);
 
+void board_train(const struct passenger *);
+
 void exit_(const char *);
 
 int main() {
@@ -59,6 +61,18 @@ void init_passenger(struct passenger *this, int sem_id) {
         this->has_bike = 0;
     else
         this->has_bike = 1;
+}
+
+void board_train(const struct passenger *this) {
+    if (!this->has_bike)
+        sem_wait(this->sem_id, 0, 0);
+    else
+        sem_wait(this->sem_id, 1, 0);
+
+    log_message(PROCESS_NAME,
+        "[BOARDING]   ID: %-8d BIKE: %-3d",
+        this->id,
+        this->has_bike);
 }
 
 void exit_(const char *message) {
