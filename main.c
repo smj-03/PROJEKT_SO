@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
                 }
 
             default:
-                log_message(PROCESS_NAME, "MAIN\n");
+                log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
         }
     }
 

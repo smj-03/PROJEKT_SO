@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <time.h>
 
 int log_message(const char *_process_name, const char *_format, ...);
 
