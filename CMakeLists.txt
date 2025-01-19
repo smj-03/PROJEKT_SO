@@ -4,6 +4,12 @@ project(PROJEKT_SO C)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_BUILD_TYPE Debug)
 
+add_custom_target(rm_semaphores ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "Running Bash script..."
+        COMMAND bash ${CMAKE_SOURCE_DIR}/rm_semaphores.sh
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
 set(EXECUTABLES
         TRAIN
         PASSENGER_FACTORY
@@ -27,3 +33,5 @@ foreach(exe ${EXECUTABLES})
     endif()
     add_dependencies(PROJEKT_SO ${exe})
 endforeach()
+
+add_dependencies(PROJEKT_SO rm_semaphores)
