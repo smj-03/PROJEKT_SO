@@ -23,8 +23,10 @@ add_executable(PASSENGER passenger.c)
 add_executable(PROJEKT_SO main.c)
 
 add_library(UTILITIES STATIC utilities.c)
+add_library(CONFIG STATIC config.c)
 foreach(exe ${EXECUTABLES})
     target_link_libraries(${exe} UTILITIES)
+    target_link_libraries(${exe} CONFIG)
 endforeach()
 
 foreach(exe ${EXECUTABLES})
