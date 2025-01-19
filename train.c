@@ -65,13 +65,21 @@ void init_train(struct train *this, int sem_id) {
     this->sem_id = sem_id;
 }
 
-void *open_doors_1(void *this) {
+void *open_doors_1(void *_this) {
     log_message(PROCESS_NAME, "Opening doors 1\n");
+    const struct train *this = (struct train *)_this;
+    sleep(3);
+    const int post_res = sem_post(this->sem_id, 0);
+    if (post_res == -1) exit_("Semaphore Init Post");
     while (1);
 }
 
-void *open_doors_2(void *this) {
+void *open_doors_2(void *_this) {
     log_message(PROCESS_NAME, "Opening doors 2\n");
+    const struct train *this = (struct train *)_this;
+    sleep(3);
+    const int post_res = sem_post(this->sem_id, 1);
+    if (post_res == -1) exit_("Semaphore Init Post");
     while (1);
 }
 

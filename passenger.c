@@ -47,6 +47,8 @@ int main() {
         this->sem_id
     );
 
+    board_train(this);
+
     free(this);
 
     return 0;
