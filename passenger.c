@@ -1,13 +1,10 @@
 //
 // Created by Szymon on 1/19/2025.
 //
-
-#include <unistd.h>
-
 #include "utilities.h"
 
 #define PROCESS_NAME "PASSENGER"
-#define BIKE_PROB 5 // 20%
+#define BIKE_PROB 4 // 25%
 
 struct passenger {
     int id;
@@ -20,9 +17,9 @@ void init_passenger(struct passenger *this) {
     this->ts_onboarding = NULL;
 
     if (get_random_number(0, BIKE_PROB - 1))
-        this->has_bike = 1;
-    else
         this->has_bike = 0;
+    else
+        this->has_bike = 1;
 }
 
 int main() {
@@ -34,6 +31,7 @@ int main() {
 
     if (this == NULL) {
         log_error(PROCESS_NAME, errno, "Passenger Failure");
+        exit(1);
     }
 
     log_message(

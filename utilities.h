@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <stdarg.h>
+#include <pthread.h>
 
 int log_message(const char *_process_name, const char *_format, ...);
 
