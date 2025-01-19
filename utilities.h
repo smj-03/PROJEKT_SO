@@ -23,4 +23,14 @@ void get_process_path(char *path, const char *process_name);
 
 int get_random_number(int min, int max);
 
+int sem_alloc(key_t key, int number, int flags);
+
+int sem_init(int sem_id, int number, int value);
+
+int sem_post(int sem_id, int number);
+
+int sem_wait(int sem_id, int number, int flags);
+
+int sem_destroy(const int sem_id, const int number);
+
 #endif //UTILITIES_H

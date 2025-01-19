@@ -80,3 +80,32 @@ void get_process_path(char *path, const char *process_name) {
 int get_random_number(const int min, const int max) {
     return rand() % (max - min + 1) + min;
 }
+
+int sem_alloc(const key_t key, const int number, const int flags) {
+    return semget(key, number, flags);
+}
+
+int sem_init(const int sem_id, const int number, const int value) {
+    return semctl(sem_id, number, SETVAL, value);
+}
+
+int sem_post(const int sem_id, const int number) {
+    struct sembuf operations[1];
+    operations[0].sem_num = number;
+    operations[0].sem_op = 1;
+
+    return semop(sem_id, operations, 1);
+}
+
+int sem_wait(const int sem_id, const int number, const int flags) {
+    struct sembuf operations[1];
+    operations[0].sem_num = number;
+    operations[0].sem_op = -1;
+    operations[0].sem_flg = 0 | flags;
+
+    return semop(sem_id, operations, 1);
+}
+
+int sem_destroy(const int sem_id, const int number) {
+    return semctl(sem_id, number, IPC_RMID, NULL);
+}

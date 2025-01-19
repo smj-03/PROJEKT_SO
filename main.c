@@ -14,12 +14,12 @@ int main(int argc, char *argv[]) {
     const key_t train_key = ftok(".", "TRAIN");
     if (train_key == -1) exit_("Key Creation");
 
-    const int train_sem_id = semget(train_key, TRAIN_SEMAPHORES, IPC_CREAT | IPC_EXCL | 0666);
+    const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | IPC_EXCL | 0666);
     if (train_sem_id == -1) exit_("Semaphore Allocation Error");
 
     for(int i = 0; i < TRAIN_SEMAPHORES; i++) {
-        const int train_sem_ctl = semctl(train_sem_id, i, SETVAL, 0);
-        if (train_sem_ctl == -1) exit_("Semaphore Control Error");
+        const int init_res= sem_init(train_sem_id, i, 0);
+        if (init_res == -1) exit_("Semaphore Control Error");
     }
 
     for (int i = 0; i < PROCESS_NUMBER; i++) {
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
         wait((int *) NULL);
     }
 
-    semctl(train_sem_id, TRAIN_SEMAPHORES, IPC_RMID, NULL);
+    sem_destroy(train_sem_id, TRAIN_SEMAPHORES);
 
     return 0;
 }
