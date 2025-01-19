@@ -2,14 +2,14 @@
 // Created by Szymon on 1/19/2025.
 //
 
-#include <stdlib.h>
-#include <sys/wait.h>
-#include <stdio.h>
 #include <unistd.h>
+
+#include "utilities.h"
+
+#define PROCESS_NAME "PASSENGER"
 
 int main() {
     sleep(1);
-    printf("Hello Passenger!\n");
-    fflush(stdout);
+    log_message(PROCESS_NAME, "Hello, I'm a passenger %d!\n", getpid());
     return 0;
 }

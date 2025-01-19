@@ -12,19 +12,21 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < PROCESS_NUMBER; i++) {
         switch (fork()) {
             case -1:
-                perror("fork");
+                log_error(PROCESS_NAME, errno, "Fork Failure");
                 exit(1);
+
             case 0:
-                log_message(PROCESS_NAME, "I'm the child\n");
+                log_message(PROCESS_NAME, "Spawning %s process\n", processes[i]);
                 char path[20];
                 get_process_path(path, processes[i]);
                 const int execVal = execl(path, processes[i], NULL);
                 if (execVal == -1) {
-                    log_error(PROCESS_NAME, errno, "Execl Failure");
+                    log_error(PROCESS_NAME, errno, "%s Execl Failure", processes[i]);
                     exit(1);
                 }
+
             default:
-                log_message(PROCESS_NAME, "I'm the parent\n");
+                log_message(PROCESS_NAME, "MAIN\n");
         }
     }
 

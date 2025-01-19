@@ -14,12 +14,23 @@
 int main(int argc, char *argv[]) {
     srand(time(NULL));
 
-    while (1) {
+    int a = 3;
+    while (a) {
+        a--;
         int interval = get_random_number(MIN_INTERVAL, MAX_INTERVAL);
         log_message(PROCESS_NAME, "Interval %d sec\n", interval);
-        if (interval >= 8) {
-            log_error(PROCESS_NAME, errno, "Interval too big! %d\n", interval);
-            break;
+        switch (fork()) {
+            case -1:
+                log_error(PROCESS_NAME, errno, "Fork Failure");
+                exit(1);
+
+            case 0:
+                log_message(PROCESS_NAME, "Spawning PASSENGER process\n");
+                const int execVal = execl("./PASSENGER", "PASSENGER", NULL);
+                if (execVal == -1) {
+                    log_error(PROCESS_NAME, errno, "%s Execl Failure");
+                    exit(1);
+                }
         }
         sleep(interval);
     }

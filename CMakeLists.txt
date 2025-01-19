@@ -10,6 +10,7 @@ add_executable(PASSENGER_FACTORY passenger_factory.c)
 target_link_libraries(PASSENGER_FACTORY UTILITES)
 
 add_executable(PASSENGER passenger.c)
+target_link_libraries(PASSENGER UTILITES)
 
 add_executable(PROJEKT_SO main.c utilities.h)
 target_link_libraries(PROJEKT_SO UTILITES)
