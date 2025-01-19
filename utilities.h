@@ -5,6 +5,10 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-void get_process_path(char* path, const char* process_name);
+int printf(const char *__format, ...);
+
+void get_process_path(char *path, const char *process_name);
+
+int get_random_number(int min, int max);
 
 #endif //UTILITIES_H

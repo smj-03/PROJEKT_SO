@@ -2,14 +2,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <time.h>
 
 #include "utilities.h"
 
+#define PROCESS_NUMBER 1
+
 int main(void) {
-    char* processes[] = {"PASSENGER_FACTORY", "PASSENGER"};
+    char* processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY"};
 
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < PROCESS_NUMBER; i++) {
         switch (fork()) {
             case -1:
                 perror("fork");
@@ -28,7 +31,7 @@ int main(void) {
         }
     }
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < PROCESS_NUMBER; i++) {
         wait((int *) NULL);
     }
     return 0;

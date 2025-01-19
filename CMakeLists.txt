@@ -7,6 +7,7 @@ set(CMAKE_BUILD_TYPE Debug)
 add_library(UTILITES STATIC utilites.c)
 
 add_executable(PASSENGER_FACTORY passenger_factory.c)
+target_link_libraries(PASSENGER_FACTORY UTILITES)
 
 add_executable(PASSENGER passenger.c)
 
