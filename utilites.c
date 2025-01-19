@@ -57,8 +57,9 @@ int log_error(const char *_process_name, const int error_code, const char *_form
             _process_name,
             ANSI_COLOR_RESET);
 
-    fprintf(stderr, "[%sERROR%s] ",
+    fprintf(stderr, "[%sERROR %d%s] ",
             ANSI_COLOR_RED,
+            error_code,
             ANSI_COLOR_RESET);
 
     va_list args;

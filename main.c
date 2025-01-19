@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
                 get_process_path(path, processes[i]);
                 const int execVal = execl(path, processes[i], NULL);
                 if (execVal == -1) {
-                    log_error(PROCESS_NAME, errno, "DUPA!!");
+                    log_error(PROCESS_NAME, errno, "Execl Failure");
                     exit(1);
                 }
             default:
