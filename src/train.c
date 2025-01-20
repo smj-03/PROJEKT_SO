@@ -32,6 +32,11 @@ int main(int argc, char *argv[]) {
     const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | 0666);
     if (train_sem_id == -1) exit_("Semaphore Allocation Error");
 
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    log_message(PROCESS_NAME, "[CWD] %s\n", cwd);
+    log_message(PROCESS_NAME, "[KEY] 0x%x\n", train_key);
+
     struct train *this = malloc(sizeof(struct train));
     init_train(this, train_sem_id);
 

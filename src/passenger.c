@@ -28,6 +28,12 @@ int main() {
     const key_t train_key = ftok(".", "A");
     if (train_key == -1) exit_("Key Creation");
 
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    log_message(PROCESS_NAME, "[CWD] %s\n", cwd);
+    log_message(PROCESS_NAME, "[KEY] 0x%x\n", train_key);
+
+
     const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | 0666);
     if (train_sem_id == -1) exit_("Semaphore Allocation Error");
 
