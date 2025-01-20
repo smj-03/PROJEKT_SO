@@ -5,7 +5,6 @@
 #include <utilities.h>
 
 #define PROCESS_NAME "PASSENGER"
-#define BIKE_PROB 4 // 25%
 
 struct passenger {
     int id;
@@ -59,7 +58,7 @@ void init_passenger(struct passenger *this, int sem_id_td_p, int sem_id_td_c) {
     this->sem_id_td_p = sem_id_td_p;
     this->sem_id_td_c = sem_id_td_c;
 
-    if (get_random_number(0, BIKE_PROB - 1))
+    if (get_random_number(0, PASSENGER_BIKE_PROB - 1))
         this->has_bike = 0;
     else
         this->has_bike = 1;

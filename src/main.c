@@ -2,13 +2,12 @@
 #include <utilities.h>
 
 #define PROCESS_NAME "MAIN"
-#define PROCESS_NUMBER 2
 
 void exit_(const char *);
 
 int main(int argc, char *argv[]) {
     log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
-    char *processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY", "TRAIN"};
+    char *processes[MAIN_PROCESS_NUM] = {"PASSENGER_FACTORY", "TRAIN"};
 
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_CREAT | IPC_EXCL | 0666);
     if (sem_id_td_p == -1) exit_("Semaphore Allocation Error");
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
         if (init_res_c == -1) exit_("Semaphore Control Error");
     }
 
-    for (int i = 0; i < PROCESS_NUMBER; i++) {
+    for (int i = 0; i < MAIN_PROCESS_NUM; i++) {
         switch (fork()) {
             case -1:
                 exit_("Fork Failure");
@@ -44,7 +43,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for (int i = 0; i < PROCESS_NUMBER; i++) {
+    for (int i = 0; i < MAIN_PROCESS_NUM; i++) {
         wait((int *) NULL);
     }
 

@@ -2,10 +2,9 @@
 // Created by Szymon on 1/19/2025.
 //
 #include <utilities.h>
+#include <config.h>
 
 #define PROCESS_NAME "PASSENGER FACTORY"
-#define MIN_INTERVAL 0
-#define MAX_INTERVAL 15
 
 void handle_sigchld(int);
 
@@ -20,7 +19,7 @@ int main(int argc, char *argv[]) {
     }
 
     while (1) {
-        int interval = get_random_number(MIN_INTERVAL, MAX_INTERVAL);
+        int interval = get_random_number(PASSENGER_MIN_INTERVAL, PASSENGER_MAX_INTERVAL);
         if (interval <= 5) interval = 0;
 
         const int forkVal = fork();
