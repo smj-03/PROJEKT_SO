@@ -1,6 +1,7 @@
 //
 // Created by Szymon on 1/19/2025.
 //
+#include "config.h"
 #include "utilities.h"
 
 #define PROCESS_NAME "TRAIN"
@@ -26,16 +27,20 @@ void *open_doors_2(void *);
 void exit_(const char *);
 
 int main(int argc, char *argv[]) {
-    const key_t train_key = ftok(".", "T");
-    if (train_key == -1) exit_("Key Creation");
+    // const key_t train_key = ftok(".", "B");
+    // if (train_key == -1) exit_("Key Creation");
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    log_message(PROCESS_NAME, "[CWD] %s\n", cwd);
+    log_message(PROCESS_NAME, "[KEY] 0x%x\n", SEM_TRAIN_KEY);
 
-    const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | 0666);
+    const int train_sem_id = sem_alloc(SEM_TRAIN_KEY, TRAIN_SEMAPHORES, IPC_CREAT | 0666);
     if (train_sem_id == -1) exit_("Semaphore Allocation Error");
 
     struct train *this = malloc(sizeof(struct train));
     init_train(this, train_sem_id);
 
-    if (this == NULL) exit("Train Creation");
+    if (this == NULL) exit_("Train Creation");
 
     log_message(
         PROCESS_NAME,

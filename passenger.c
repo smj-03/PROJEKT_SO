@@ -1,6 +1,7 @@
 //
 // Created by Szymon on 1/19/2025.
 //
+#include "config.h"
 #include "utilities.h"
 
 #define PROCESS_NAME "PASSENGER"
@@ -25,10 +26,14 @@ void exit_(const char *);
 int main() {
     srand(time(NULL));
 
-    const key_t train_key = ftok(".", "T");
-    if (train_key == -1) exit_("Key Creation");
+    // const key_t train_key = ftok("/tmp", "A");
+    // if (train_key == -1) exit_("Key Creation");
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    log_message(PROCESS_NAME, "[CWD] %s\n", cwd);
+    log_message(PROCESS_NAME, "[KEY] 0x%x\n", SEM_TRAIN_KEY);
 
-    const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | 0666);
+    const int train_sem_id = sem_alloc(SEM_TRAIN_KEY, TRAIN_SEMAPHORES, IPC_CREAT | 0666);
     if (train_sem_id == -1) exit_("Semaphore Allocation Error");
 
     struct passenger *this = malloc(sizeof(struct passenger));

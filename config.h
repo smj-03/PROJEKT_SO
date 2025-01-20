@@ -8,4 +8,6 @@
 #define SEM_TRAIN_OPEN 2
 #define SEM_TRAIN_CLOSE 2
 
+#define SEM_TRAIN_KEY 0x2f20e002
+
 #endif //CONFIG_H

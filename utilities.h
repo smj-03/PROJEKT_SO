@@ -13,7 +13,10 @@
 #include <string.h>
 #include <stdarg.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
 #include <sys/sem.h>
+#include <sys/errno.h>
 
 int log_message(const char *_process_name, const char *_format, ...);
 

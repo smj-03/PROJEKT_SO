@@ -11,8 +11,12 @@ int main(int argc, char *argv[]) {
     log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
     char *processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY", "TRAIN"};
 
-    const key_t train_key = ftok(".", "T");
+    const key_t train_key = ftok("/tmp", "A");
     if (train_key == -1) exit_("Key Creation");
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    log_message(PROCESS_NAME, "[CWD] %s\n", cwd);
+    log_message(PROCESS_NAME, "[KEY] 0x%x\n", train_key);
 
     const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | IPC_EXCL | 0666);
     if (train_sem_id == -1) exit_("Semaphore Allocation Error");
@@ -21,6 +25,8 @@ int main(int argc, char *argv[]) {
         const int init_res= sem_init(train_sem_id, i, 0);
         if (init_res == -1) exit_("Semaphore Control Error");
     }
+
+    log_message(PROCESS_NAME, "SEM ID: %d\n", train_sem_id);
 
     for (int i = 0; i < PROCESS_NUMBER; i++) {
         switch (fork()) {
