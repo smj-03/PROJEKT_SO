@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
     char *processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY", "TRAIN"};
 
-    const key_t train_key = ftok(".", "TRAIN");
+    const key_t train_key = ftok(".", "A");
     if (train_key == -1) exit_("Key Creation");
 
     const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | IPC_EXCL | 0666);
