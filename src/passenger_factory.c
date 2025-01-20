@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
             default:
                 log_message(
                     PROCESS_NAME,
-                    "Spawning PASSENGER: %d, Next in %d seconds\n",
+                    "[SPAWN] PASSENGER: %d, Next in %d seconds\n",
                     forkVal,
                     interval);
         }

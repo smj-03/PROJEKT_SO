@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
                 }
 
             default:
-                log_message(PROCESS_NAME, "Spawning %s process\n", processes[i]);
+                log_message(PROCESS_NAME, "[SPAWN] %s process\n", processes[i]);
         }
     }
 

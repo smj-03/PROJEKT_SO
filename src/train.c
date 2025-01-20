@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 
     log_message(
         PROCESS_NAME,
-        "[NEW TRAIN]   ID: %-8d SEM_IDs: %d %d\n",
+        "[INIT]   ID: %-8d SEM_IDs: %d %d\n",
         this->id,
         this->sem_id_td_p,
         this->sem_id_td_c);
@@ -68,7 +68,7 @@ void init_train(struct train *this, int sem_id_td_p, int sem_id_td_c) {
 }
 
 void *open_doors_1(void *_this) {
-    log_message(PROCESS_NAME, "Opening doors 1\n");
+    log_message(PROCESS_NAME, "[THREAD] Doors 1\n");
     struct train *this = _this;
     while (1) {
         const int post_res = sem_post(this->sem_id_td_p, 0);
@@ -82,7 +82,7 @@ void *open_doors_1(void *_this) {
 }
 
 void *open_doors_2(void *_this) {
-    log_message(PROCESS_NAME, "Opening doors 2\n");
+    log_message(PROCESS_NAME, "[THREAD] Doors 2\n");
     struct train *this = _this;
     while (1) {
         const int post_res = sem_post(this->sem_id_td_p, 1);

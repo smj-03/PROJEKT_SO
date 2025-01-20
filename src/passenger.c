@@ -41,7 +41,7 @@ int main() {
 
     log_message(
         PROCESS_NAME,
-        "[NEW PASSENGER]   ID: %-8d BIKE: %-3d SEM_IDs: %d %d\n",
+        "[INIT]   ID: %-8d BIKE: %-3d SEM_IDs: %d %d\n",
         this->id,
         this->has_bike,
         this->sem_id_td_p,
