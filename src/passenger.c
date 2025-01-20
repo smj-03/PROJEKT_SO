@@ -1,7 +1,7 @@
 //
 // Created by Szymon on 1/19/2025.
 //
-#include "utilities.h"
+#include <utilities.h>
 
 #define PROCESS_NAME "PASSENGER"
 #define BIKE_PROB 4 // 25%

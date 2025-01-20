@@ -1,7 +1,8 @@
 //
 // Created by Szymon on 1/19/2025.
 //
-#include "utilities.h"
+#include <config.h>
+#include <utilities.h>
 
 #define PROCESS_NAME "TRAIN"
 

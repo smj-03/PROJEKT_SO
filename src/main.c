@@ -1,4 +1,5 @@
-#include "utilities.h"
+#include <config.h>
+#include <utilities.h>
 
 #define PROCESS_NAME "MAIN"
 #define PROCESS_NUMBER 2
