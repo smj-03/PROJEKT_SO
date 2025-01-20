@@ -109,3 +109,42 @@ int sem_wait(const int sem_id, const int number, const int flags) {
 int sem_destroy(const int sem_id, const int number) {
     return semctl(sem_id, number, IPC_RMID, NULL);
 }
+
+int init_semaphores(const int name, const int number, const char *process_name) {
+    const key_t key = ftok(".", name);
+    if (key == -1) {
+        log_error(process_name, errno, "%s Key Creation Error", name);
+        exit(1);
+    }
+
+    const int sem_id = sem_alloc(key, number, IPC_CREAT | IPC_EXCL | 0666);
+    if (sem_id == -1) {
+        log_error(process_name, errno, "%s Semaphore Allocation Error", name);
+        exit(1);
+    }
+
+    for (int i = 0; i < number; i++) {
+        const int init_res = sem_init(sem_id, i, 0);
+        if (init_res == -1) {
+            log_error(process_name, errno, "%s Semaphore Control Error", name);
+            exit(1);
+        }
+    }
+
+    return sem_id;
+}
+
+int get_semaphores(int name, const int number, const char *process_name) {
+    const key_t key = ftok(".", name);
+    if (key == -1) {
+        log_error(process_name, errno, "%s Key Creation Error", name);
+        exit(1);
+    }
+    const int sem_id = sem_alloc(key, number, IPC_EXCL | 0666);
+    if (sem_id == -1) {
+        log_error(process_name, errno, "%s Semaphore Allocation Error", name);
+        exit(1);
+    }
+
+    return sem_id;
+}

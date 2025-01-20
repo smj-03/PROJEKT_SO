@@ -31,6 +31,10 @@ int sem_post(int sem_id, int number);
 
 int sem_wait(int sem_id, int number, int flags);
 
-int sem_destroy(const int sem_id, const int number);
+int sem_destroy(int sem_id, int number);
+
+int init_semaphores(int name,  int number, const char *process_name);
+
+int get_semaphores(int name,  int number, const char *process_name);
 
 #endif //UTILITIES_H

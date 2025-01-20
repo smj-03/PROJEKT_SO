@@ -26,7 +26,7 @@ void *open_doors_2(void *);
 void exit_(const char *);
 
 int main(int argc, char *argv[]) {
-    const key_t train_key = ftok(".", "TRAIN");
+    const key_t train_key = ftok(".", "T");
     if (train_key == -1) exit_("Key Creation");
 
     const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | 0666);
