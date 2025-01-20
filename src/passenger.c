@@ -36,14 +36,14 @@ int main() {
         exit(1);
     }
 
-    log_message(
-        PROCESS_NAME,
-        "[INIT]   ID: %-8d BIKE: %-3d SEM_IDs: %d %d\n",
-        this->id,
-        this->has_bike,
-        this->sem_id_td_p,
-        this->sem_id_td_c
-    );
+    // log_message(
+    //     PROCESS_NAME,
+    //     "[INIT]   ID: %-8d BIKE: %-3d SEM_IDs: %d %d\n",
+    //     this->id,
+    //     this->has_bike,
+    //     this->sem_id_td_p,
+    //     this->sem_id_td_c
+    // );
 
     board_train(this);
 

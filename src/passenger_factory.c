@@ -8,16 +8,17 @@
 
 void spawn_passenger();
 
-void handle_sigchld(int sig);
-
 int main(int argc, char *argv[]) {
     srand(time(NULL));
 
     int a = 3;
     while (a) {
-        a--;
-        int interval = get_random_number(PASSENGER_MIN_INTERVAL, PASSENGER_MAX_INTERVAL);
-        int concurrent_passengers = get_random_number(1, PASSENGER_MAX_CONCURRENCY);
+        // a--;
+        const int interval = get_random_number(PASSENGER_MIN_INTERVAL, PASSENGER_MAX_INTERVAL);
+
+        int concurrent_passengers = 1;
+        int solo_passenger = get_random_number(0,PASSENGER_SOLO_PROB);
+        if(!solo_passenger) concurrent_passengers = get_random_number(2, PASSENGER_MAX_CONCURRENCY);
 
         log_message(PROCESS_NAME, "[SPAWN] %d processe(s)\n", concurrent_passengers);
         for (int i = 0; i < concurrent_passengers; i++) spawn_passenger(interval);

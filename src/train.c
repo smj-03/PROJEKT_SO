@@ -37,12 +37,12 @@ int main(int argc, char *argv[]) {
 
     if (this == NULL) exit_("Train Creation");
 
-    log_message(
-        PROCESS_NAME,
-        "[INIT]   ID: %-8d SEM_IDs: %d %d\n",
-        this->id,
-        this->sem_id_td_p,
-        this->sem_id_td_c);
+    // log_message(
+    //     PROCESS_NAME,
+    //     "[INIT]   ID: %-8d SEM_IDs: %d %d\n",
+    //     this->id,
+    //     this->sem_id_td_p,
+    //     this->sem_id_td_c);
 
     // 1 - baggage 2 - bike
     pthread_t id_thread_door_1, id_thread_door_2;
