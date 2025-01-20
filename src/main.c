@@ -4,26 +4,16 @@
 #define PROCESS_NAME "MAIN"
 #define PROCESS_NUMBER 2
 
-#define TRAIN_SEMAPHORES 2
-
 void exit_(const char *);
 
 int main(int argc, char *argv[]) {
     log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
     char *processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY", "TRAIN"};
 
-    const key_t train_key = ftok(".", "A");
-    if (train_key == -1) exit_("Key Creation");
-
-    char cwd[1024];
-    getcwd(cwd, sizeof(cwd));
-    log_message(PROCESS_NAME, "[CWD] %s\n", cwd);
-    log_message(PROCESS_NAME, "[KEY] 0x%x\n", train_key);
-
-    const int train_sem_id = sem_alloc(train_key, TRAIN_SEMAPHORES, IPC_CREAT | IPC_EXCL | 0666);
+    const int train_sem_id = sem_alloc(SEM_TRAIN_OPEN_KEY, SEM_TRAIN_OPEN_NUM, IPC_CREAT | IPC_EXCL | 0666);
     if (train_sem_id == -1) exit_("Semaphore Allocation Error");
 
-    for(int i = 0; i < TRAIN_SEMAPHORES; i++) {
+    for(int i = 0; i < SEM_TRAIN_OPEN_NUM; i++) {
         const int init_res= sem_init(train_sem_id, i, 0);
         if (init_res == -1) exit_("Semaphore Control Error");
     }
@@ -51,7 +41,7 @@ int main(int argc, char *argv[]) {
         wait((int *) NULL);
     }
 
-    sem_destroy(train_sem_id, TRAIN_SEMAPHORES);
+    sem_destroy(train_sem_id, SEM_TRAIN_OPEN_NUM);
 
     return 0;
 }
