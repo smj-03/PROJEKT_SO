@@ -10,12 +10,19 @@ int main(int argc, char *argv[]) {
     log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
     char *processes[PROCESS_NUMBER] = {"PASSENGER_FACTORY", "TRAIN"};
 
-    const int train_sem_id = sem_alloc(SEM_TRAIN_OPEN_KEY, SEM_TRAIN_OPEN_NUM, IPC_CREAT | IPC_EXCL | 0666);
-    if (train_sem_id == -1) exit_("Semaphore Allocation Error");
+    const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_CREAT | IPC_EXCL | 0666);
+    if (sem_id_td_p == -1) exit_("Semaphore Allocation Error");
 
-    for(int i = 0; i < SEM_TRAIN_OPEN_NUM; i++) {
-        const int init_res= sem_init(train_sem_id, i, 0);
-        if (init_res == -1) exit_("Semaphore Control Error");
+    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C, SEM_T_DOOR_NUM, IPC_CREAT | IPC_EXCL | 0666);
+    if (sem_id_td_c == -1) exit_("Semaphore Allocation Error");
+
+
+    for(int i = 0; i < SEM_T_DOOR_NUM; i++) {
+        const int init_res_p= sem_init(sem_id_td_p, i, 0);
+        if (init_res_p == -1) exit_("Semaphore Control Error");
+
+        const int init_res_c= sem_init(sem_id_td_c, i, 0);
+        if (init_res_c == -1) exit_("Semaphore Control Error");
     }
 
     for (int i = 0; i < PROCESS_NUMBER; i++) {
@@ -41,7 +48,8 @@ int main(int argc, char *argv[]) {
         wait((int *) NULL);
     }
 
-    sem_destroy(train_sem_id, SEM_TRAIN_OPEN_NUM);
+    sem_destroy(sem_id_td_p, SEM_T_DOOR_NUM);
+    sem_destroy(sem_id_td_c, SEM_T_DOOR_NUM);
 
     return 0;
 }
