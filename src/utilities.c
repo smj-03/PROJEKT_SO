@@ -78,7 +78,6 @@ void get_process_path(char *path, const char *process_name) {
 }
 
 int get_random_number(const int min, const int max) {
-    srand(getpid());
     return rand() % (max - min + 1) + min;
 }
 

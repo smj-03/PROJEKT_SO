@@ -58,6 +58,7 @@ void init_passenger(struct passenger *this, int sem_id_td_p, int sem_id_td_c) {
     this->sem_id_td_p = sem_id_td_p;
     this->sem_id_td_c = sem_id_td_c;
 
+    srand(getpid());
     if (get_random_number(0, PASSENGER_BIKE_PROB - 1))
         this->has_bike = 0;
     else
