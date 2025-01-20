@@ -5,15 +5,17 @@
 #define UTILITIES_H
 
 #include <stdio.h>
-#include <signal.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <string.h>
 #include <stdarg.h>
 #include <pthread.h>
+#include <sys/wait.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
 #include <sys/sem.h>
 
 int log_message(const char *_process_name, const char *_format, ...);
@@ -32,6 +34,14 @@ int sem_post(int sem_id, int number);
 
 int sem_wait(int sem_id, int number, int flags);
 
-int sem_destroy(const int sem_id, const int number);
+int sem_destroy(int sem_id, int number);
+
+int shared_block_alloc(key_t key, size_t size);
+
+void *shared_block_attach(key_t key, int size);
+
+int shared_block_detach(const void *block);
+
+int shared_block_destroy(key_t key);
 
 #endif //UTILITIES_H

@@ -109,3 +109,29 @@ int sem_wait(const int sem_id, const int number, const int flags) {
 int sem_destroy(const int sem_id, const int number) {
     return semctl(sem_id, number, IPC_RMID, NULL);
 }
+
+int shared_block_alloc(const key_t key, const size_t size) {
+    return shmget(key, size, IPC_CREAT | 0666);
+}
+
+void *shared_block_attach(const key_t key, int size) {
+    const int shared_block_id = shared_block_alloc(key, size);
+    if(shared_block_id == -1) return NULL;
+
+    char *result = shmat(shared_block_id, NULL, 0);
+    if(result == (char *) -1) return NULL;
+
+    return result;
+}
+
+int shared_block_detach(const void *block) {
+    return shmdt(block);
+}
+
+int shared_block_destroy(const key_t key) {
+    const int shared_block_id = shared_block_alloc(key, 0);
+    if(shared_block_id == -1) return NULL;
+
+    return shmctl(shared_block_id, IPC_RMID, NULL);
+}
+
