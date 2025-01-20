@@ -4,17 +4,13 @@
 #include <utilities.h>
 
 #define PROCESS_NAME "PASSENGER FACTORY"
-#define MIN_INTERVAL 5
-#define MAX_INTERVAL 10
+#define MIN_INTERVAL 0
+#define MAX_INTERVAL 7
 
 int main(int argc, char *argv[]) {
-    srand(time(NULL));
-
-    int a = 3;
-    while (a) {
-        a--;
+    while (1) {
         int interval = get_random_number(MIN_INTERVAL, MAX_INTERVAL);
-        // if (interval <= 5) interval = 0;
+        if (interval <= 5) interval = 0;
 
         const int forkVal = fork();
         switch (forkVal) {
@@ -35,6 +31,8 @@ int main(int argc, char *argv[]) {
                     "[SPAWN] PASSENGER: %d, Next in %d seconds\n",
                     forkVal,
                     interval);
+                // int status;
+                // waitpid(forkVal, &status, 0);
         }
 
         sleep(interval);

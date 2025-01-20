@@ -23,8 +23,6 @@ void board_train(const struct passenger *);
 void exit_(const char *);
 
 int main() {
-    srand(time(NULL));
-
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_CREAT | 0666);
     if (sem_id_td_p == -1) exit_("Semaphore Allocation Error");
 

@@ -74,10 +74,12 @@ void *open_doors_1(void *_this) {
         const int post_res = sem_post(this->sem_id_td_p, 0);
         if (post_res == -1) exit_("Semaphore Init Post");
 
-        this->passenger_count++;
-
         sem_wait(this->sem_id_td_c, 0, 0);
-        log_message(PROCESS_NAME, "[BOARDING] Passenger has entered\n");
+
+        pthread_mutex_lock(&mutex);
+        this->passenger_count++;
+        log_message(PROCESS_NAME, "[BOARDING] Passenger has entered. Current number: %d\n", this->passenger_count);
+        pthread_mutex_unlock(&mutex);
     }
 }
 
@@ -88,11 +90,16 @@ void *open_doors_2(void *_this) {
         const int post_res = sem_post(this->sem_id_td_p, 1);
         if (post_res == -1) exit_("Semaphore Init Post");
 
+        sem_wait(this->sem_id_td_c, 1, 0);
+
+        pthread_mutex_lock(&mutex);
         this->passenger_count++;
         this->bike_count++;
-
-        sem_wait(this->sem_id_td_c, 1, 0);
-        log_message(PROCESS_NAME, "[BOARDING] Passenger with a bike has entered\n");
+        log_message(PROCESS_NAME,
+            "[BOARDING] Passenger with a bike has entered. Current number: %d Bike number:%d\n",
+            this->passenger_count,
+            this->bike_count);
+        pthread_mutex_unlock(&mutex);
     }
 }
 
