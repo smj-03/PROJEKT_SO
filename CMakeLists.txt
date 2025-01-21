@@ -5,9 +5,9 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-add_custom_target(rm_semaphores ALL
+add_custom_target(rm_ipc_ids ALL
         COMMAND ${CMAKE_COMMAND} -E echo "Running Bash script..."
-        COMMAND bash ${CMAKE_SOURCE_DIR}/rm_semaphores.sh
+        COMMAND bash ${CMAKE_SOURCE_DIR}/rm_ipc_ids.sh
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
@@ -40,4 +40,4 @@ foreach(exe ${EXECUTABLES})
     add_dependencies(MAIN ${exe})
 endforeach()
 
-add_dependencies(MAIN rm_semaphores)
+add_dependencies(MAIN rm_ipc_ids)
