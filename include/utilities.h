@@ -16,11 +16,17 @@
 #include <sys/wait.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
+#include <sys/msg.h>
 #include <sys/sem.h>
 
 #define IPC_ERROR -1
 #define IPC_CREATE IPC_CREAT | IPC_EXCL | 0666
 #define IPC_GET IPC_CREAT | 0666
+
+struct message {
+    long int mtype;
+    int mvalue;
+};
 
 int log_message(const char *_process_name, const char *_format, ...);
 
@@ -47,5 +53,13 @@ void *shared_block_attach(key_t key, int size);
 int shared_block_detach(const void *block);
 
 int shared_block_destroy(key_t key);
+
+int message_queue_alloc(key_t key, int flags);
+
+int message_queue_send(int msg_id, const struct message *message);
+
+ssize_t message_queue_receive(int msg_id, struct message *message, long int mtype);
+
+int message_queue_destroy(int msg_id);
 
 #endif //UTILITIES_H

@@ -135,3 +135,18 @@ int shared_block_destroy(const key_t key) {
     return shmctl(shared_block_id, IPC_RMID, NULL);
 }
 
+int message_queue_alloc(const key_t key, const int flags) {
+    return msgget(key, flags);
+}
+
+int message_queue_send(const int msg_id, const struct message *message) {
+    return msgsnd(msg_id, message, sizeof(message->mvalue), 0);
+}
+
+ssize_t message_queue_receive(const int msg_id, struct message *message, const long int mtype) {
+    return msgrcv(msg_id, message, sizeof(message->mvalue), mtype, 0);
+}
+
+int message_queue_destroy(const int msg_id) {
+    return msgctl(msg_id, IPC_RMID, NULL);
+}
