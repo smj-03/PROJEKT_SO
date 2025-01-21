@@ -9,6 +9,7 @@
 struct passenger {
     int id;
     _Bool has_bike;
+    _Bool is_boarded;
 };
 
 struct params {
@@ -24,7 +25,7 @@ void init_params(struct params *);
 
 void init_passenger(struct passenger *);
 
-void board_train(const struct passenger *, struct params *);
+void board_train(struct passenger *, struct params *);
 
 void exit_(const char *);
 
@@ -92,6 +93,7 @@ void init_params(struct params *params) {
 
 void init_passenger(struct passenger *this) {
     this->id = getpid();
+    this->is_boarded = 0;
 
     srand(getpid());
     if (get_random_number(0, PASSENGER_BIKE_PROB - 1))
@@ -100,12 +102,12 @@ void init_passenger(struct passenger *this) {
         this->has_bike = 1;
 }
 
-void board_train(const struct passenger *this, struct params *params) {
+void board_train(struct passenger *this, struct params *params) {
     sem_wait(params->sem_id_td_p, this->has_bike, 0);
 
     struct message message;
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
-    if(message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY) == IPC_ERROR) exit_("Message Receive Error");
+    if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY) == IPC_ERROR) exit_("Message Receive Error");
 
     int *shared_memory = this->has_bike ? params->shared_memory_2 : params->shared_memory_1;
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
@@ -119,10 +121,11 @@ void board_train(const struct passenger *this, struct params *params) {
                 this->id,
                 this->has_bike);
 
-    sleep(3);
+    sleep(PASSENGER_BOARDING_TIME);
+    this->is_boarded = 1;
 
     message.mtype = MSG_TYPE_FULL;
-    if(message_queue_send(msg_id, &message) == IPC_ERROR) exit_("Message Send Error");
+    if (message_queue_send(msg_id, &message) == IPC_ERROR) exit_("Message Send Error");
     sem_post(params->sem_id_td_c, this->has_bike);
 }
 

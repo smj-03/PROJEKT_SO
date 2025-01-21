@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 
     int a = 5;
     while (a) {
-        a--;
+        // a--;
         const int interval = get_random_number(PASSENGER_MIN_INTERVAL, PASSENGER_MAX_INTERVAL);
 
         int concurrent_passengers = 1;

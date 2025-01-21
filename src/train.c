@@ -32,7 +32,7 @@ void init_params(struct params *);
 
 void init_train(struct train *);
 
-void *open_doors(void *);
+void *open_doors(const void *);
 
 void exit_(const char *);
 
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 
     init_train(this);
 
-    // 1 - baggage 2 - bike
+    // 1 BAGGAGE 2 BIKE
     pthread_t id_thread_door_1, id_thread_door_2;
 
     struct thread_args *args_1 = malloc(sizeof(struct thread_args));
@@ -71,7 +71,6 @@ int main(int argc, char *argv[]) {
     //     params->msg_id_td_1,
     //     params->msg_id_td_2
     // );
-
 
     if (pthread_create(&id_thread_door_1, NULL, open_doors, args_1)) exit_("Thread 1 Creation");
     if (pthread_create(&id_thread_door_2, NULL, open_doors, args_2)) exit_("Thread 2 Creation");
@@ -125,7 +124,7 @@ void init_train(struct train *this) {
     this->bike_count = 0;
 }
 
-void *open_doors(void *_args) {
+void *open_doors(const void *_args) {
     const struct thread_args *args = _args;
     const struct params *params = args->params;
     struct train *this = args->this;
@@ -147,16 +146,18 @@ void *open_doors(void *_args) {
 
         shared_memory[limit] = (shared_memory[limit] + 1) % limit;
 
-        log_message(PROCESS_NAME, "[DOOR] Welcome Passenger %d! Bike: %d\n", passenger_id, msg_id);
+        log_message(PROCESS_NAME, "[DOOR] Welcome Passenger %d! BIKE: %d\n", passenger_id, args->door_number);
         // TO DO: ADD ID TO STACK
 
         pthread_mutex_lock(params->mutex);
         this->passenger_count++;
         if (args->door_number == 1) this->bike_count++;
-        log_message(PROCESS_NAME,
-                    "[BOARDING] Passenger has entered. P: %d, B: %d\n",
-                    this->passenger_count,
-                    this->bike_count);
+
+        // log_message(PROCESS_NAME,
+        //             "[BOARDING] Passenger has entered. P: %d, B: %d\n",
+        //             this->passenger_count,
+        //             this->bike_count);
+
         pthread_mutex_unlock(params->mutex);
 
         message.mtype = MSG_TYPE_EMPTY;
