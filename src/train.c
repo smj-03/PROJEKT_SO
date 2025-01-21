@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_GET);
     if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
 
-    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C, SEM_T_DOOR_NUM, IPC_GET);
+    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C_KEY, SEM_T_DOOR_NUM, IPC_GET);
     if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
 
     struct train *this = malloc(sizeof(struct train));
@@ -50,16 +50,16 @@ int main(int argc, char *argv[]) {
     struct thread_args *args_1 = malloc(sizeof(struct thread_args));
     if (args_1 == NULL) exit_("Thread Arguments Creation");
     args_1->door_number = 0;
-    args_1->sem_id_td_p = sem_id_td_p,
-            args_1->sem_id_td_c = sem_id_td_c;
+    args_1->sem_id_td_p = sem_id_td_p;
+    args_1->sem_id_td_c = sem_id_td_c;
     args_1->mutex = &mutex;
     args_1->this = this;
 
     struct thread_args *args_2 = malloc(sizeof(struct thread_args));
     if (args_2 == NULL) exit_("Thread Arguments Creation");
     args_2->door_number = 1;
-    args_2->sem_id_td_p = sem_id_td_p,
-            args_2->sem_id_td_c = sem_id_td_c;
+    args_2->sem_id_td_p = sem_id_td_p;
+    args_2->sem_id_td_c = sem_id_td_c;
     args_2->mutex = &mutex;
     args_2->this = this;
 
@@ -96,14 +96,18 @@ void *open_doors(void *_args) {
     log_message(PROCESS_NAME, "[THREAD] Doors %d\n", args->door_number + 1);
 
     while (1) {
-        const int post_res = sem_post(args->sem_id_td_p, 0);
+        const int post_res = sem_post(args->sem_id_td_p, args->door_number);
         if (post_res == IPC_ERROR) exit_("Semaphore Init Post");
 
         sem_wait(args->sem_id_td_c, args->door_number, 0);
 
         pthread_mutex_lock(args->mutex);
         this->passenger_count++;
-        log_message(PROCESS_NAME, "[BOARDING] Passenger has entered. Current number: %d\n", this->passenger_count);
+        if(args->door_number == 1) this->bike_count++;
+        log_message(PROCESS_NAME,
+            "[BOARDING] Passenger has entered. P: %d, B: %d\n",
+            this->passenger_count,
+            this->bike_count);
         pthread_mutex_unlock(args->mutex);
     }
 }

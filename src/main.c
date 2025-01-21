@@ -9,12 +9,11 @@ int main(int argc, char *argv[]) {
     log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
     char *processes[MAIN_PROCESS_NUM] = {"PASSENGER_FACTORY", "TRAIN"};
 
-    const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_CREATE);
+    const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_CREATE);
     if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
 
-    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C, SEM_T_DOOR_NUM, IPC_CREATE);
+    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C_KEY, SEM_T_DOOR_NUM, IPC_CREATE);
     if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
-
 
     for(int i = 0; i < SEM_T_DOOR_NUM; i++) {
         const int init_res_p= sem_init(sem_id_td_p, i, 0);
