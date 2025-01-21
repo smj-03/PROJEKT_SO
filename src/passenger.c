@@ -22,10 +22,10 @@ void board_train(const struct passenger *);
 void exit_(const char *);
 
 int main() {
-    const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_CREAT | 0666);
+    const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_GET);
     if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
 
-    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C, SEM_T_DOOR_NUM, IPC_CREAT | 0666);
+    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C, SEM_T_DOOR_NUM, IPC_GET);
     if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
 
     struct passenger *this = malloc(sizeof(struct passenger));

@@ -19,6 +19,8 @@
 #include <sys/sem.h>
 
 #define IPC_ERROR -1
+#define IPC_CREATE IPC_CREAT | IPC_EXCL | 0666
+#define IPC_GET IPC_CREAT | 0666
 
 int log_message(const char *_process_name, const char *_format, ...);
 
