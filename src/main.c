@@ -10,10 +10,10 @@ int main(int argc, char *argv[]) {
     char *processes[MAIN_PROCESS_NUM] = {"PASSENGER_FACTORY", "TRAIN"};
 
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_CREAT | IPC_EXCL | 0666);
-    if (sem_id_td_p == -1) exit_("Semaphore Allocation Error");
+    if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
 
     const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C, SEM_T_DOOR_NUM, IPC_CREAT | IPC_EXCL | 0666);
-    if (sem_id_td_c == -1) exit_("Semaphore Allocation Error");
+    if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
 
 
     for(int i = 0; i < SEM_T_DOOR_NUM; i++) {
@@ -26,14 +26,14 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < MAIN_PROCESS_NUM; i++) {
         switch (fork()) {
-            case -1:
+            case IPC_ERROR:
                 exit_("Fork Failure");
 
             case 0:
                 char path[20];
                 get_process_path(path, processes[i]);
-                const int execVal = execl(path, processes[i], NULL);
-                if (execVal == -1) {
+                const int exec_val = execl(path, processes[i], NULL);
+                if (exec_val == IPC_ERROR) {
                     log_error(PROCESS_NAME, errno, "%s Execl Failure", processes[i]);
                     exit(1);
                 }

@@ -23,10 +23,10 @@ void exit_(const char *);
 
 int main() {
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_CREAT | 0666);
-    if (sem_id_td_p == -1) exit_("Semaphore Allocation Error");
+    if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
 
     const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C, SEM_T_DOOR_NUM, IPC_CREAT | 0666);
-    if (sem_id_td_c == -1) exit_("Semaphore Allocation Error");
+    if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
 
     struct passenger *this = malloc(sizeof(struct passenger));
     init_passenger(this, sem_id_td_p, sem_id_td_c);

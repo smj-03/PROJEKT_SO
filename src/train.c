@@ -27,10 +27,10 @@ void exit_(const char *);
 
 int main(int argc, char *argv[]) {
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P, SEM_T_DOOR_NUM, IPC_CREAT | 0666);
-    if (sem_id_td_p == -1) exit_("Semaphore Allocation Error");
+    if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
 
     const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C, SEM_T_DOOR_NUM, IPC_CREAT | 0666);
-    if (sem_id_td_c == -1) exit_("Semaphore Allocation Error");
+    if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
 
     struct train *this = malloc(sizeof(struct train));
     init_train(this, sem_id_td_p, sem_id_td_c);
@@ -72,7 +72,7 @@ void *open_doors_1(void *_this) {
     struct train *this = _this;
     while (1) {
         const int post_res = sem_post(this->sem_id_td_p, 0);
-        if (post_res == -1) exit_("Semaphore Init Post");
+        if (post_res == IPC_ERROR) exit_("Semaphore Init Post");
 
         sem_wait(this->sem_id_td_c, 0, 0);
 
@@ -88,7 +88,7 @@ void *open_doors_2(void *_this) {
     struct train *this = _this;
     while (1) {
         const int post_res = sem_post(this->sem_id_td_p, 1);
-        if (post_res == -1) exit_("Semaphore Init Post");
+        if (post_res == IPC_ERROR) exit_("Semaphore Init Post");
 
         sem_wait(this->sem_id_td_c, 1, 0);
 

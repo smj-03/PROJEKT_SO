@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
         int solo_passenger = get_random_number(0,PASSENGER_SOLO_PROB);
         if(!solo_passenger) concurrent_passengers = get_random_number(2, PASSENGER_MAX_CONCURRENCY);
 
-        log_message(PROCESS_NAME, "[SPAWN] %d processe(s)\n", concurrent_passengers);
+        log_message(PROCESS_NAME, "[SPAWN] %d process(es)\n", concurrent_passengers);
         for (int i = 0; i < concurrent_passengers; i++) spawn_passenger(interval);
 
         sleep(interval);
@@ -32,13 +32,13 @@ int main(int argc, char *argv[]) {
 void spawn_passenger(int interval) {
     const int fork_val = fork();
     switch (fork_val) {
-        case -1:
+        case IPC_ERROR:
             log_error(PROCESS_NAME, errno, "Fork Failure");
             exit(1);
 
         case 0:
-            const int execVal = execl("./PASSENGER", "PASSENGER", NULL);
-            if (execVal == -1) {
+            const int exec_val = execl("./PASSENGER", "PASSENGER", NULL);
+            if (exec_val == IPC_ERROR) {
                 log_error(PROCESS_NAME, errno, "%s Execl Failure");
                 exit(1);
             }

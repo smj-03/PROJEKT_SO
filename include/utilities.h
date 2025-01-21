@@ -18,6 +18,8 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
+#define IPC_ERROR -1
+
 int log_message(const char *_process_name, const char *_format, ...);
 
 int log_error(const char *_process_name, int error_code, const char *_format, ...);
