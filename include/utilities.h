@@ -46,7 +46,7 @@ int sem_wait(int sem_id, int number, int flags);
 
 int sem_destroy(int sem_id, int number);
 
-int shared_block_alloc(key_t key, size_t size);
+int shared_block_alloc(key_t key, size_t size, int flags);
 
 void *shared_block_attach(key_t key, int size);
 

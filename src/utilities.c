@@ -110,12 +110,12 @@ int sem_destroy(const int sem_id, const int number) {
     return semctl(sem_id, number, IPC_RMID, NULL);
 }
 
-int shared_block_alloc(const key_t key, const size_t size) {
-    return shmget(key, size, IPC_CREAT | 0666);
+int shared_block_alloc(const key_t key, const size_t size, const int flags) {
+    return shmget(key, size, flags);
 }
 
 void *shared_block_attach(const key_t key, int size) {
-    const int shared_block_id = shared_block_alloc(key, size);
+    const int shared_block_id = shared_block_alloc(key, size, IPC_GET);
     if(shared_block_id == IPC_ERROR) return NULL;
 
     char *result = shmat(shared_block_id, NULL, 0);
@@ -129,7 +129,7 @@ int shared_block_detach(const void *block) {
 }
 
 int shared_block_destroy(const key_t key) {
-    const int shared_block_id = shared_block_alloc(key, 0);
+    const int shared_block_id = shared_block_alloc(key, 0, IPC_GET);
     if(shared_block_id == IPC_ERROR) return -1;
 
     return shmctl(shared_block_id, IPC_RMID, NULL);

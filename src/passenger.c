@@ -9,54 +9,66 @@
 struct passenger {
     int id;
     _Bool has_bike;
-    time_t *ts_onboarding;
+};
 
+struct params {
     int sem_id_td_p;
     int sem_id_td_c;
 };
 
-void init_passenger(struct passenger *, int, int);
+void init_params(struct params *);
 
-void board_train(const struct passenger *);
+void init_passenger(struct passenger *);
+
+void board_train(const struct passenger *, struct params *);
 
 void exit_(const char *);
 
 int main() {
-    const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_GET);
-    if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
-
-    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C_KEY, SEM_T_DOOR_NUM, IPC_GET);
-    if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
-
-    struct passenger *this = malloc(sizeof(struct passenger));
-    init_passenger(this, sem_id_td_p, sem_id_td_c);
-
-    if (this == NULL) {
-        log_error(PROCESS_NAME, errno, "Passenger Failure");
+    struct params *params = malloc(sizeof(struct params));
+    if (params == NULL) {
+        log_error(PROCESS_NAME, errno, "Params Error");
         exit(1);
     }
+
+    struct passenger *this = malloc(sizeof(struct passenger));
+    if (this == NULL) {
+        log_error(PROCESS_NAME, errno, "Passenger Error");
+        exit(1);
+    }
+
+    init_params(params);
+    init_passenger(this);
+    board_train(this, params);
 
     // log_message(
     //     PROCESS_NAME,
     //     "[INIT]   ID: %-8d BIKE: %-3d SEM_IDs: %d %d\n",
     //     this->id,
     //     this->has_bike,
-    //     this->sem_id_td_p,
-    //     this->sem_id_td_c
+    //     params->sem_id_td_p,
+    //     params->sem_id_td_c
     // );
 
-    board_train(this);
-
+    free(params);
     free(this);
 
     return 0;
 }
 
-void init_passenger(struct passenger *this, int sem_id_td_p, int sem_id_td_c) {
+void init_params(struct params *params) {
+    const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_GET);
+    if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
+
+    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C_KEY, SEM_T_DOOR_NUM, IPC_GET);
+    if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
+
+    params->sem_id_td_p = sem_id_td_p;
+    params->sem_id_td_c = sem_id_td_c;
+}
+
+void init_passenger(struct passenger *this) {
     this->id = getpid();
-    this->ts_onboarding = NULL;
-    this->sem_id_td_p = sem_id_td_p;
-    this->sem_id_td_c = sem_id_td_c;
 
     srand(getpid());
     if (get_random_number(0, PASSENGER_BIKE_PROB - 1))
@@ -65,16 +77,16 @@ void init_passenger(struct passenger *this, int sem_id_td_p, int sem_id_td_c) {
         this->has_bike = 1;
 }
 
-void board_train(const struct passenger *this) {
-    sem_wait(this->sem_id_td_p, this->has_bike, 0);
+void board_train(const struct passenger *this, struct params *params) {
+    sem_wait(params->sem_id_td_p, this->has_bike, 0);
 
     log_message(PROCESS_NAME,
-        "[BOARDING]   ID: %-8d BIKE: %-3d\n",
-        this->id,
-        this->has_bike);
+                "[BOARDING]   ID: %-8d BIKE: %-3d\n",
+                this->id,
+                this->has_bike);
 
     sleep(3);
-    sem_post(this->sem_id_td_c, this->has_bike);
+    sem_post(params->sem_id_td_c, this->has_bike);
 }
 
 void exit_(const char *message) {
