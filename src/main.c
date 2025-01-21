@@ -7,7 +7,7 @@ void exit_(const char *);
 
 int main(int argc, char *argv[]) {
     log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
-    char *processes[MAIN_PROCESS_NUM] = {"PASSENGER_FACTORY", "TRAIN"};
+    char *processes[MAIN_PROCESS_NUM] = {"PASSENGER_FACTORY", "TRAIN", "STATION_MASTER"};
 
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_CREATE);
     if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");

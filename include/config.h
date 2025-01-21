@@ -6,7 +6,7 @@
 #define CONFIG_H
 
 // MAIN
-#define MAIN_PROCESS_NUM 2
+#define MAIN_PROCESS_NUM 3
 
 // PASSENGER
 #define PASSENGER_MIN_INTERVAL 1

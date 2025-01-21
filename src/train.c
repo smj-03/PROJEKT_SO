@@ -32,7 +32,9 @@ void init_params(struct params *);
 
 void init_train(struct train *);
 
-void *open_doors(const void *);
+void init_conductor();
+
+void *open_doors(void *);
 
 void exit_(const char *);
 
@@ -46,6 +48,8 @@ int main(int argc, char *argv[]) {
     init_params(params);
 
     init_train(this);
+
+    init_conductor();
 
     // 1 BAGGAGE 2 BIKE
     pthread_t id_thread_door_1, id_thread_door_2;
@@ -124,7 +128,25 @@ void init_train(struct train *this) {
     this->bike_count = 0;
 }
 
-void *open_doors(const void *_args) {
+void init_conductor() {
+    const int fork_val = fork();
+    switch (fork_val) {
+        case IPC_ERROR:
+            exit_("Execl Error");
+
+        case 0:
+            const int exec_val = execl("./CONDUCTOR", "CONDUCTOR", NULL);
+            if (exec_val == IPC_ERROR) exit_("Execl Error");
+
+        default:
+            log_message(
+                PROCESS_NAME,
+                "[SPAWN] CONDUCTOR: %d\n",
+                fork_val);
+    }
+}
+
+void *open_doors(void *_args) {
     const struct thread_args *args = _args;
     const struct params *params = args->params;
     struct train *this = args->this;
@@ -161,7 +183,7 @@ void *open_doors(const void *_args) {
         pthread_mutex_unlock(params->mutex);
 
         message.mtype = MSG_TYPE_EMPTY;
-        if(message_queue_send(msg_id, &message) == IPC_ERROR) exit_("Message Send Error");
+        if (message_queue_send(msg_id, &message) == IPC_ERROR) exit_("Message Send Error");
     }
 }
 
