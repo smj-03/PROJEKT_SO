@@ -9,8 +9,10 @@
 struct params {
     int sem_id_td_p;
     int sem_id_td_c;
-    int shm_id_td_1;
-    int shm_id_td_2;
+    int msg_id_td_1;
+    int msg_id_td_2;
+    int *shared_memory_1;
+    int *shared_memory_2;
     pthread_mutex_t *mutex;
 };
 
@@ -62,10 +64,14 @@ int main(int argc, char *argv[]) {
 
     // log_message(
     //     PROCESS_NAME,
-    //     "[INIT]   ID: %-8d SEM_IDs: %d %d\n",
+    //     "[INIT]   ID: %-8d SEM_IDs: %d %d MSG_IDs: %d %d\n",
     //     this->id,
-    //     this->sem_id_td_p,
-    //     this->sem_id_td_c);
+    //     params->sem_id_td_p,
+    //     params->sem_id_td_c,
+    //     params->msg_id_td_1,
+    //     params->msg_id_td_2
+    // );
+
 
     if (pthread_create(&id_thread_door_1, NULL, open_doors, args_1)) exit_("Thread 1 Creation");
     if (pthread_create(&id_thread_door_2, NULL, open_doors, args_2)) exit_("Thread 2 Creation");
@@ -85,7 +91,7 @@ int main(int argc, char *argv[]) {
 }
 
 void init_params(struct params *params) {
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     params->mutex = &mutex;
 
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_GET);
@@ -96,13 +102,21 @@ void init_params(struct params *params) {
     if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
     params->sem_id_td_c = sem_id_td_c;
 
-    const int shm_id_td_1 = shared_block_alloc(SHM_TRAIN_DOOR_1_KEY, TRAIN_P_LIMIT * sizeof(int), IPC_CREATE);
-    if (shm_id_td_1 == IPC_ERROR) exit_("Shared Memory Allocation Error");
-    params->shm_id_td_1 = shm_id_td_1;
+    int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
+    if (shared_memory_1 == NULL) exit_("Shared Memory Attach Error");
+    params->shared_memory_1 = shared_memory_1;
 
-    const int shm_id_td_2 = shared_block_alloc(SHM_TRAIN_DOOR_2_KEY, TRAIN_B_LIMIT * sizeof(int), IPC_CREATE);
-    if (shm_id_td_2 == IPC_ERROR) exit_("Shared Memory Allocation Error");
-    params->shm_id_td_2 = shm_id_td_2;
+    int *shared_memory_2 = shared_block_attach(SHM_TRAIN_DOOR_2_KEY, (TRAIN_B_LIMIT + 2) * sizeof(int));
+    if (shared_memory_2 == NULL) exit_("Shared Memory Attach Error");
+    params->shared_memory_2 = shared_memory_2;
+
+    const int msg_id_td_1 = message_queue_alloc(MSG_TRAIN_DOOR_1_KEY,IPC_GET);
+    if (msg_id_td_1 == IPC_ERROR) exit_("Message Queue Allocation Error");
+    params->msg_id_td_1 = msg_id_td_1;
+
+    const int msg_id_td_2 = message_queue_alloc(MSG_TRAIN_DOOR_2_KEY,IPC_GET);
+    if (msg_id_td_2 == IPC_ERROR) exit_("Message Queue Allocation Error");
+    params->msg_id_td_2 = msg_id_td_2;
 }
 
 void init_train(struct train *this) {
@@ -112,16 +126,29 @@ void init_train(struct train *this) {
 }
 
 void *open_doors(void *_args) {
-    struct thread_args *args = _args;
-    struct params *params = args->params;
+    const struct thread_args *args = _args;
+    const struct params *params = args->params;
     struct train *this = args->this;
     log_message(PROCESS_NAME, "[THREAD] Doors %d\n", args->door_number + 1);
 
     while (1) {
-        const int post_res = sem_post(params->sem_id_td_p, args->door_number);
-        if (post_res == IPC_ERROR) exit_("Semaphore Init Post");
-
+        sem_post(params->sem_id_td_p, args->door_number);
         sem_wait(params->sem_id_td_c, args->door_number, 0);
+
+        struct message message;
+        const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
+        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL) == IPC_ERROR) exit_("Message Receive Error");
+
+        int *shared_memory = args->door_number ? params->shared_memory_2 : params->shared_memory_1;
+        const int limit = args->door_number ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
+
+        const int read = shared_memory[limit];
+        const int passenger_id = shared_memory[read];
+
+        shared_memory[limit] = (shared_memory[limit] + 1) % limit;
+
+        log_message(PROCESS_NAME, "[DOOR] Welcome Passenger %d! Bike: %d\n", passenger_id, msg_id);
+        // TO DO: ADD ID TO STACK
 
         pthread_mutex_lock(params->mutex);
         this->passenger_count++;
@@ -131,6 +158,9 @@ void *open_doors(void *_args) {
                     this->passenger_count,
                     this->bike_count);
         pthread_mutex_unlock(params->mutex);
+
+        message.mtype = MSG_TYPE_EMPTY;
+        if(message_queue_send(msg_id, &message) == IPC_ERROR) exit_("Message Send Error");
     }
 }
 

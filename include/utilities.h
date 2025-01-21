@@ -23,6 +23,9 @@
 #define IPC_CREATE IPC_CREAT | IPC_EXCL | 0666
 #define IPC_GET IPC_CREAT | 0666
 
+#define MSG_TYPE_EMPTY 1
+#define MSG_TYPE_FULL 2
+
 struct message {
     long int mtype;
     int mvalue;
