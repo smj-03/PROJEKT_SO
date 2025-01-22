@@ -6,6 +6,16 @@
 
 #define PROCESS_NAME "TRAIN"
 
+struct passenger_stack_1 {
+    int top;
+    int data[TRAIN_P_LIMIT];
+};
+
+struct passenger_stack_2 {
+    int top;
+    int data[TRAIN_B_LIMIT];
+};
+
 struct params {
     int sem_id_td_p;
     int sem_id_td_c;
@@ -13,6 +23,8 @@ struct params {
     int msg_id_td_2;
     int *shared_memory_1;
     int *shared_memory_2;
+    struct passenger_stack_1 *stack_1;
+    struct passenger_stack_2 *stack_2;
     pthread_mutex_t *mutex;
 };
 
@@ -120,6 +132,22 @@ void init_params(struct params *params) {
     const int msg_id_td_2 = message_queue_alloc(MSG_TRAIN_DOOR_2_KEY,IPC_GET);
     if (msg_id_td_2 == IPC_ERROR) exit_("Message Queue Allocation Error");
     params->msg_id_td_2 = msg_id_td_2;
+
+    const int shm_id_ts_1 = shared_block_alloc(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1), IPC_CREATE);
+    if (shm_id_ts_1 == IPC_ERROR) exit_("Shared Memory Allocation Error");
+
+    struct passenger_stack_1 *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1));
+    if (stack_1 == NULL) exit_("Shared Memory Attach Error");
+    stack_1->top = 0;
+    params->stack_1 = stack_1;
+
+    const int shm_id_ts_2 = shared_block_alloc(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2), IPC_CREATE);
+    if (shm_id_ts_2 == IPC_ERROR) exit_("Shared Memory Allocation Error");
+
+    struct passenger_stack_2 *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2));
+    if (stack_2 == NULL) exit_("Shared Memory Attach Error");
+    stack_2->top = 0;
+    params->stack_2 = stack_2;
 }
 
 void init_train(struct train *this) {
@@ -172,8 +200,16 @@ void *open_doors(void *_args) {
         // TO DO: ADD ID TO STACK
 
         pthread_mutex_lock(params->mutex);
+
         this->passenger_count++;
-        if (args->door_number == 1) this->bike_count++;
+        if (params->stack_1->top != TRAIN_P_LIMIT - 1)
+            params->stack_1->data[params->stack_1->top++] = passenger_id;
+
+        if (args->door_number == 1) {
+            this->bike_count++;
+            if (params->stack_2->top != TRAIN_P_LIMIT - 1)
+                params->stack_2->data[params->stack_2->top++] = passenger_id;
+        }
 
         // log_message(PROCESS_NAME,
         //             "[BOARDING] Passenger has entered. P: %d, B: %d\n",
