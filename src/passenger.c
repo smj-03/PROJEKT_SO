@@ -13,8 +13,6 @@ struct passenger {
 };
 
 struct params {
-    int sem_id_td_p;
-    int sem_id_td_c;
     int msg_id_td_1;
     int msg_id_td_2;
     int *shared_memory_1;
@@ -41,11 +39,9 @@ int main() {
 
     if(VERBOSE_LOGS) log_message(
         PROCESS_NAME,
-        "[INIT]   ID: %-8d BIKE: %-3d SEM_IDs: %d %d MSG_IDs: %d %d\n",
+        "[INIT]   ID: %-8d BIKE: %-3d MSG_IDs: %d %d\n",
         this->id,
         this->has_bike,
-        params->sem_id_td_p,
-        params->sem_id_td_c,
         params->msg_id_td_1,
         params->msg_id_td_2
     );
@@ -59,14 +55,6 @@ int main() {
 }
 
 void init_params(struct params *params) {
-    const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_GET);
-    if (sem_id_td_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
-    params->sem_id_td_p = sem_id_td_p;
-
-    const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C_KEY, SEM_T_DOOR_NUM, IPC_GET);
-    if (sem_id_td_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
-    params->sem_id_td_c = sem_id_td_c;
-
     int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
     if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_1 = shared_memory_1;
@@ -96,8 +84,6 @@ void init_passenger(struct passenger *this) {
 }
 
 void board_train(struct passenger *this, struct params *params) {
-    sem_wait(params->sem_id_td_p, this->has_bike, 0);
-
     struct message message;
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
     if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Receive Error");
@@ -114,10 +100,8 @@ void board_train(struct passenger *this, struct params *params) {
                 this->id,
                 this->has_bike);
 
-    sleep(PASSENGER_BOARDING_TIME);
     this->is_boarded = 1;
 
     message.mtype = MSG_TYPE_FULL;
     if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
-    sem_post(params->sem_id_td_c, this->has_bike);
 }

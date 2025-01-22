@@ -6,7 +6,7 @@
 #define CONFIG_H
 
 // GENERAL
-#define VERBOSE_LOGS 1 // 1 - ON, 0 - OFF
+#define VERBOSE_LOGS 0
 
 // MAIN
 #define MAIN_PROCESS_NUM 3
