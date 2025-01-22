@@ -40,10 +40,11 @@ void spawn_passenger(int interval) {
             if (exec_val == IPC_ERROR) throw_error(PROCESS_NAME, "%s Execl Error");
 
         default:
-            log_message(
-                PROCESS_NAME,
-                "[SPAWN] PASSENGER: %d, Next in %d seconds\n",
-                fork_val,
-                interval);
+            if (VERBOSE_LOGS)
+                log_message(
+                    PROCESS_NAME,
+                    "[SPAWN] PASSENGER: %d, Next in %d seconds\n",
+                    fork_val,
+                    interval);
     }
 }

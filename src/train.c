@@ -76,15 +76,16 @@ int main(int argc, char *argv[]) {
     args_2->this = this;
     args_2->params = params;
 
-    // log_message(
-    //     PROCESS_NAME,
-    //     "[INIT]   ID: %-8d SEM_IDs: %d %d MSG_IDs: %d %d\n",
-    //     this->id,
-    //     params->sem_id_td_p,
-    //     params->sem_id_td_c,
-    //     params->msg_id_td_1,
-    //     params->msg_id_td_2
-    // );
+    if (VERBOSE_LOGS)
+        log_message(
+            PROCESS_NAME,
+            "[INIT]   ID: %-8d SEM_IDs: %d %d MSG_IDs: %d %d\n",
+            this->id,
+            params->sem_id_td_p,
+            params->sem_id_td_c,
+            params->msg_id_td_1,
+            params->msg_id_td_2
+        );
 
     if (pthread_create(&id_thread_door_1, NULL, open_doors, args_1)) throw_error(PROCESS_NAME, "Thread 1 Creation");
     if (pthread_create(&id_thread_door_2, NULL, open_doors, args_2)) throw_error(PROCESS_NAME, "Thread 2 Creation");
@@ -184,7 +185,8 @@ void *open_doors(void *_args) {
 
         struct message message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
-        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Receive Error");
+        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL) == IPC_ERROR) throw_error(
+            PROCESS_NAME, "Message Receive Error");
 
         int *shared_memory = args->door_number ? params->shared_memory_2 : params->shared_memory_1;
         const int limit = args->door_number ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;

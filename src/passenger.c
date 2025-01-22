@@ -39,16 +39,16 @@ int main() {
     init_passenger(this);
     board_train(this, params);
 
-    // log_message(
-    //     PROCESS_NAME,
-    //     "[INIT]   ID: %-8d BIKE: %-3d SEM_IDs: %d %d MSG_IDs: %d %d\n",
-    //     this->id,
-    //     this->has_bike,
-    //     params->sem_id_td_p,
-    //     params->sem_id_td_c,
-    //     params->msg_id_td_1,
-    //     params->msg_id_td_2
-    // );
+    if(VERBOSE_LOGS) log_message(
+        PROCESS_NAME,
+        "[INIT]   ID: %-8d BIKE: %-3d SEM_IDs: %d %d MSG_IDs: %d %d\n",
+        this->id,
+        this->has_bike,
+        params->sem_id_td_p,
+        params->sem_id_td_c,
+        params->msg_id_td_1,
+        params->msg_id_td_2
+    );
 
     shared_block_detach(params->shared_memory_1);
     shared_block_detach(params->shared_memory_2);

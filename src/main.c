@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 
 
             default:
-                log_message(PROCESS_NAME, "[SPAWN] %s process\n", processes[i]);
+                if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[SPAWN] %s process\n", processes[i]);
         }
     }
 
