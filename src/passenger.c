@@ -27,20 +27,13 @@ void init_passenger(struct passenger *);
 
 void board_train(struct passenger *, struct params *);
 
-void exit_(const char *);
-
 int main() {
     struct params *params = malloc(sizeof(struct params));
-    if (params == NULL) {
-        log_error(PROCESS_NAME, errno, "Params Error");
-        exit(1);
-    }
+    if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
+
 
     struct passenger *this = malloc(sizeof(struct passenger));
-    if (this == NULL) {
-        log_error(PROCESS_NAME, errno, "Passenger Error");
-        exit(1);
-    }
+    if (this == NULL) throw_error(PROCESS_NAME, "Passenger Error");
 
     init_params(params);
     init_passenger(this);
@@ -67,27 +60,27 @@ int main() {
 
 void init_params(struct params *params) {
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_GET);
-    if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
+    if (sem_id_td_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_td_p = sem_id_td_p;
 
     const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C_KEY, SEM_T_DOOR_NUM, IPC_GET);
-    if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
+    if (sem_id_td_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_td_c = sem_id_td_c;
 
     int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
-    if (shared_memory_1 == NULL) exit_("Shared Memory Attach Error");
+    if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_1 = shared_memory_1;
 
     int *shared_memory_2 = shared_block_attach(SHM_TRAIN_DOOR_2_KEY, (TRAIN_B_LIMIT + 2) * sizeof(int));
-    if (shared_memory_2 == NULL) exit_("Shared Memory Attach Error");
+    if (shared_memory_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_2 = shared_memory_2;
 
     const int msg_id_td_1 = message_queue_alloc(MSG_TRAIN_DOOR_1_KEY,IPC_GET);
-    if (msg_id_td_1 == IPC_ERROR) exit_("Message Queue Allocation Error");
+    if (msg_id_td_1 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_td_1 = msg_id_td_1;
 
     const int msg_id_td_2 = message_queue_alloc(MSG_TRAIN_DOOR_2_KEY,IPC_GET);
-    if (msg_id_td_2 == IPC_ERROR) exit_("Message Queue Allocation Error");
+    if (msg_id_td_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_td_2 = msg_id_td_2;
 }
 
@@ -107,7 +100,7 @@ void board_train(struct passenger *this, struct params *params) {
 
     struct message message;
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
-    if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY) == IPC_ERROR) exit_("Message Receive Error");
+    if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Receive Error");
 
     int *shared_memory = this->has_bike ? params->shared_memory_2 : params->shared_memory_1;
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
@@ -125,11 +118,6 @@ void board_train(struct passenger *this, struct params *params) {
     this->is_boarded = 1;
 
     message.mtype = MSG_TYPE_FULL;
-    if (message_queue_send(msg_id, &message) == IPC_ERROR) exit_("Message Send Error");
+    if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
     sem_post(params->sem_id_td_c, this->has_bike);
-}
-
-void exit_(const char *message) {
-    log_error(PROCESS_NAME, errno, message);
-    exit(1);
 }

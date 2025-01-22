@@ -33,7 +33,7 @@ int log_message(const char *_process_name, const char *_format, ...) {
     return result;
 }
 
-int log_error(const char *_process_name, const int error_code, const char *_format, ...) {
+void throw_error(const char *_process_name, const char *_format, ...) {
     const time_t now = time(NULL);
     const struct tm *local_time = localtime(&now);
 
@@ -51,24 +51,24 @@ int log_error(const char *_process_name, const int error_code, const char *_form
 
     fprintf(stderr, "[%sERROR %d%s] ",
             ANSI_COLOR_RED,
-            error_code,
+            errno,
             ANSI_COLOR_RESET);
 
     va_list args;
     va_start(args, _format);
 
-    int result = vfprintf(stderr, _format, args);
+    vfprintf(stderr, _format, args);
 
     va_end(args);
 
-    if (error_code != 0) {
-        fprintf(stderr, ": %s\n", strerror(error_code));
+    if (errno != 0) {
+        fprintf(stderr, ": %s\n", strerror(errno));
     } else fprintf(stderr, "\n");
 
 
     fflush(stderr);
 
-    return result;
+    exit(1);
 }
 
 void get_process_path(char *path, const char *process_name) {

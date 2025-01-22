@@ -48,14 +48,12 @@ void init_conductor();
 
 void *open_doors(void *);
 
-void exit_(const char *);
-
 int main(int argc, char *argv[]) {
     struct params *params = malloc(sizeof(struct params));
-    if (params == NULL) exit_("Params Error");
+    if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
 
     struct train *this = malloc(sizeof(struct train));
-    if (this == NULL) exit_("Train Error");
+    if (this == NULL) throw_error(PROCESS_NAME, "Train Error");
 
     init_params(params);
 
@@ -67,13 +65,13 @@ int main(int argc, char *argv[]) {
     pthread_t id_thread_door_1, id_thread_door_2;
 
     struct thread_args *args_1 = malloc(sizeof(struct thread_args));
-    if (args_1 == NULL) exit_("Thread Arguments Creation");
+    if (args_1 == NULL) throw_error(PROCESS_NAME, "Thread Arguments Creation");
     args_1->door_number = 0;
     args_1->this = this;
     args_1->params = params;
 
     struct thread_args *args_2 = malloc(sizeof(struct thread_args));
-    if (args_2 == NULL) exit_("Thread Arguments Creation");
+    if (args_2 == NULL) throw_error(PROCESS_NAME, "Thread Arguments Creation");
     args_2->door_number = 1;
     args_2->this = this;
     args_2->params = params;
@@ -88,14 +86,14 @@ int main(int argc, char *argv[]) {
     //     params->msg_id_td_2
     // );
 
-    if (pthread_create(&id_thread_door_1, NULL, open_doors, args_1)) exit_("Thread 1 Creation");
-    if (pthread_create(&id_thread_door_2, NULL, open_doors, args_2)) exit_("Thread 2 Creation");
+    if (pthread_create(&id_thread_door_1, NULL, open_doors, args_1)) throw_error(PROCESS_NAME, "Thread 1 Creation");
+    if (pthread_create(&id_thread_door_2, NULL, open_doors, args_2)) throw_error(PROCESS_NAME, "Thread 2 Creation");
 
-    if (pthread_join(id_thread_door_1, NULL)) exit_("Thread 1 Join");
-    if (pthread_join(id_thread_door_2, NULL)) exit_("Thread 2 Join");
+    if (pthread_join(id_thread_door_1, NULL)) throw_error(PROCESS_NAME, "Thread 1 Join");
+    if (pthread_join(id_thread_door_2, NULL)) throw_error(PROCESS_NAME, "Thread 2 Join");
 
-    if (!pthread_detach(id_thread_door_1)) exit_("Thread 1 Detach");
-    if (!pthread_detach(id_thread_door_2)) exit_("Thread 2 Detach");
+    if (!pthread_detach(id_thread_door_1)) throw_error(PROCESS_NAME, "Thread 1 Detach");
+    if (!pthread_detach(id_thread_door_2)) throw_error(PROCESS_NAME, "Thread 2 Detach");
 
     free(this);
     free(params);
@@ -110,42 +108,42 @@ void init_params(struct params *params) {
     params->mutex = &mutex;
 
     const int sem_id_td_p = sem_alloc(SEM_T_DOOR_P_KEY, SEM_T_DOOR_NUM, IPC_GET);
-    if (sem_id_td_p == IPC_ERROR) exit_("Semaphore Allocation Error");
+    if (sem_id_td_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_td_p = sem_id_td_p;
 
     const int sem_id_td_c = sem_alloc(SEM_T_DOOR_C_KEY, SEM_T_DOOR_NUM, IPC_GET);
-    if (sem_id_td_c == IPC_ERROR) exit_("Semaphore Allocation Error");
+    if (sem_id_td_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_td_c = sem_id_td_c;
 
     int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
-    if (shared_memory_1 == NULL) exit_("Shared Memory Attach Error");
+    if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_1 = shared_memory_1;
 
     int *shared_memory_2 = shared_block_attach(SHM_TRAIN_DOOR_2_KEY, (TRAIN_B_LIMIT + 2) * sizeof(int));
-    if (shared_memory_2 == NULL) exit_("Shared Memory Attach Error");
+    if (shared_memory_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_2 = shared_memory_2;
 
     const int msg_id_td_1 = message_queue_alloc(MSG_TRAIN_DOOR_1_KEY,IPC_GET);
-    if (msg_id_td_1 == IPC_ERROR) exit_("Message Queue Allocation Error");
+    if (msg_id_td_1 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_td_1 = msg_id_td_1;
 
     const int msg_id_td_2 = message_queue_alloc(MSG_TRAIN_DOOR_2_KEY,IPC_GET);
-    if (msg_id_td_2 == IPC_ERROR) exit_("Message Queue Allocation Error");
+    if (msg_id_td_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_td_2 = msg_id_td_2;
 
     const int shm_id_ts_1 = shared_block_alloc(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1), IPC_CREATE);
-    if (shm_id_ts_1 == IPC_ERROR) exit_("Shared Memory Allocation Error");
+    if (shm_id_ts_1 == IPC_ERROR) throw_error(PROCESS_NAME, "Shared Memory Allocation Error");
 
     struct passenger_stack_1 *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1));
-    if (stack_1 == NULL) exit_("Shared Memory Attach Error");
+    if (stack_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     stack_1->top = 0;
     params->stack_1 = stack_1;
 
     const int shm_id_ts_2 = shared_block_alloc(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2), IPC_CREATE);
-    if (shm_id_ts_2 == IPC_ERROR) exit_("Shared Memory Allocation Error");
+    if (shm_id_ts_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Shared Memory Allocation Error");
 
     struct passenger_stack_2 *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2));
-    if (stack_2 == NULL) exit_("Shared Memory Attach Error");
+    if (stack_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     stack_2->top = 0;
     params->stack_2 = stack_2;
 }
@@ -160,11 +158,11 @@ void init_conductor() {
     const int fork_val = fork();
     switch (fork_val) {
         case IPC_ERROR:
-            exit_("Execl Error");
+            throw_error(PROCESS_NAME, "Execl Error");
 
         case 0:
             const int exec_val = execl("./CONDUCTOR", "CONDUCTOR", NULL);
-            if (exec_val == IPC_ERROR) exit_("Execl Error");
+            if (exec_val == IPC_ERROR) throw_error(PROCESS_NAME, "Execl Error");
 
         default:
             log_message(
@@ -186,7 +184,7 @@ void *open_doors(void *_args) {
 
         struct message message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
-        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL) == IPC_ERROR) exit_("Message Receive Error");
+        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Receive Error");
 
         int *shared_memory = args->door_number ? params->shared_memory_2 : params->shared_memory_1;
         const int limit = args->door_number ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
@@ -219,11 +217,6 @@ void *open_doors(void *_args) {
         pthread_mutex_unlock(params->mutex);
 
         message.mtype = MSG_TYPE_EMPTY;
-        if (message_queue_send(msg_id, &message) == IPC_ERROR) exit_("Message Send Error");
+        if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
     }
-}
-
-void exit_(const char *message) {
-    log_error(PROCESS_NAME, errno, message);
-    exit(1);
 }

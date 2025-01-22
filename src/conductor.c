@@ -16,17 +16,15 @@ struct passenger_stack_2 {
     int data[TRAIN_B_LIMIT];
 };
 
-void exit_(const char *message);
-
 int main(int argc, char *argv[]) {
 
     log_message(PROCESS_NAME, "[INIT] CONDUCTOR PID: %d\n", getpid());
 
     struct passenger_stack_1 *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1));
-    if (stack_1 == NULL) exit_("Shared Memory Attach Error");
+    if (stack_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
 
     struct passenger_stack_2 *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2));
-    if (stack_2 == NULL) exit_("Shared Memory Attach Error");
+    if (stack_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
 
     while(1) {
         sleep(5);
@@ -35,9 +33,4 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
-}
-
-void exit_(const char *message) {
-    log_error(PROCESS_NAME, errno, message);
-    exit(1);
 }
