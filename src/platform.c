@@ -4,7 +4,7 @@
 #include <utilities.h>
 #include <config.h>
 
-#define PROCESS_NAME "PASSENGER FACTORY"
+#define PROCESS_NAME "PLATFORM"
 
 void spawn_passenger();
 

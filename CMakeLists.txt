@@ -15,7 +15,7 @@ include_directories(include)
 
 set(EXECUTABLES
         TRAIN
-        PASSENGER_FACTORY
+        PLATFORM
         PASSENGER
         STATION_MASTER
         CONDUCTOR
@@ -23,7 +23,7 @@ set(EXECUTABLES
 )
 
 add_executable(TRAIN src/train.c)
-add_executable(PASSENGER_FACTORY src/passenger_factory.c)
+add_executable(PLATFORM src/platform.c)
 add_executable(PASSENGER src/passenger.c)
 add_executable(CONDUCTOR src/conductor.c)
 add_executable(STATION_MASTER src/station_master.c)
