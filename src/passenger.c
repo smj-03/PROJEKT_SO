@@ -15,8 +15,8 @@ struct passenger {
 struct params {
     int msg_id_td_1;
     int msg_id_td_2;
-    int *shared_memory_1;
-    int *shared_memory_2;
+    int *shared_memory_td_1;
+    int *shared_memory_td_2;
 };
 
 void init_params(struct params *);
@@ -46,8 +46,8 @@ int main() {
         params->msg_id_td_2
     );
 
-    shared_block_detach(params->shared_memory_1);
-    shared_block_detach(params->shared_memory_2);
+    shared_block_detach(params->shared_memory_td_1);
+    shared_block_detach(params->shared_memory_td_2);
     free(params);
     free(this);
 
@@ -57,11 +57,11 @@ int main() {
 void init_params(struct params *params) {
     int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
     if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    params->shared_memory_1 = shared_memory_1;
+    params->shared_memory_td_1 = shared_memory_1;
 
     int *shared_memory_2 = shared_block_attach(SHM_TRAIN_DOOR_2_KEY, (TRAIN_B_LIMIT + 2) * sizeof(int));
     if (shared_memory_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    params->shared_memory_2 = shared_memory_2;
+    params->shared_memory_td_2 = shared_memory_2;
 
     const int msg_id_td_1 = message_queue_alloc(MSG_TRAIN_DOOR_1_KEY,IPC_GET);
     if (msg_id_td_1 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
@@ -88,7 +88,7 @@ void board_train(struct passenger *this, struct params *params) {
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
     if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Receive Error");
 
-    int *shared_memory = this->has_bike ? params->shared_memory_2 : params->shared_memory_1;
+    int *shared_memory = this->has_bike ? params->shared_memory_td_2 : params->shared_memory_td_1;
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
 
     const int save = shared_memory[limit + 1];

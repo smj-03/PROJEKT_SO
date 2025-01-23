@@ -20,11 +20,16 @@ struct params {
     int sem_id_td;
     int msg_id_td_1;
     int msg_id_td_2;
-    int *shared_memory_1;
-    int *shared_memory_2;
+    int *shared_memory_td_1;
+    int *shared_memory_td_2;
     struct passenger_stack_1 *stack_1;
     struct passenger_stack_2 *stack_2;
     pthread_mutex_t *mutex;
+
+    int sem_id_sm;
+    int msg_id_sm;
+    int* shared_memory_sm;
+
 };
 
 struct train {
@@ -46,6 +51,8 @@ void init_train(struct train *);
 void init_conductor();
 
 void *open_doors(void *);
+
+void wait_for_departure(struct params *);
 
 int main(int argc, char *argv[]) {
     struct params *params = malloc(sizeof(struct params));
@@ -112,11 +119,11 @@ void init_params(struct params *params) {
 
     int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
     if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    params->shared_memory_1 = shared_memory_1;
+    params->shared_memory_td_1 = shared_memory_1;
 
     int *shared_memory_2 = shared_block_attach(SHM_TRAIN_DOOR_2_KEY, (TRAIN_B_LIMIT + 2) * sizeof(int));
     if (shared_memory_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    params->shared_memory_2 = shared_memory_2;
+    params->shared_memory_td_2 = shared_memory_2;
 
     const int msg_id_td_1 = message_queue_alloc(MSG_TRAIN_DOOR_1_KEY,IPC_GET);
     if (msg_id_td_1 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
@@ -141,6 +148,18 @@ void init_params(struct params *params) {
     if (stack_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     stack_2->top = 0;
     params->stack_2 = stack_2;
+
+    const int sem_id_sm = sem_alloc(SEM_STATION_MASTER_KEY, 3, IPC_GET);
+    if (sem_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
+    params->sem_id_sm = sem_id_sm;
+
+    int *shared_memory = shared_block_attach(SHM_STATION_MASTER_KEY, (TRAIN_NUM + 2) * sizeof(int));
+    if (shared_memory == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    params->shared_memory_sm = shared_memory;
+
+    const int msg_id_sm = message_queue_alloc(MSG_STATION_MASTER_KEY,IPC_GET);
+    if (msg_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
+    params->msg_id_sm = msg_id_sm;
 }
 
 void init_train(struct train *this) {
@@ -179,7 +198,7 @@ void *open_doors(void *_args) {
         if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL) == IPC_ERROR) throw_error(
             PROCESS_NAME, "Message Receive Error");
 
-        int *shared_memory = args->door_number ? params->shared_memory_2 : params->shared_memory_1;
+        int *shared_memory = args->door_number ? params->shared_memory_td_2 : params->shared_memory_td_1;
         const int limit = args->door_number ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
 
         sem_wait(params->sem_id_td, args->door_number, 0);
@@ -202,10 +221,9 @@ void *open_doors(void *_args) {
 
         sleep(PASSENGER_BOARDING_TIME);
         log_message(PROCESS_NAME,
-            "[DOOR %d] Welcome Passenger %d! BIKE: %d\n",
+            "[DOOR %d] Welcome Passenger %d!\n",
             args->door_number + 1,
-            passenger_id,
-            args->door_number);
+            passenger_id);
         sem_post(params->sem_id_td, args->door_number);
 
         message.mtype = MSG_TYPE_EMPTY;
