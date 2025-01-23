@@ -6,16 +6,6 @@
 
 #define PROCESS_NAME "TRAIN"
 
-struct passenger_stack_1 {
-    int top;
-    int data[TRAIN_P_LIMIT];
-};
-
-struct passenger_stack_2 {
-    int top;
-    int data[TRAIN_B_LIMIT];
-};
-
 struct params {
     int sem_id_td;
     int msg_id_td_1;
@@ -28,14 +18,14 @@ struct params {
 
     int sem_id_sm;
     int msg_id_sm;
-    int* shared_memory_sm;
-
+    int *shared_memory_sm;
 };
 
 struct train {
     int id;
     int passenger_count;
     int bike_count;
+    int return_interval;
 };
 
 struct thread_args {
@@ -52,9 +42,12 @@ void init_conductor();
 
 void *open_doors(void *);
 
-void wait_for_departure(struct params *);
+// TODO: CHANGE FOR SIGNAL HANDLER
+void wait_for_departure(struct train *, struct params *);
 
 int main(int argc, char *argv[]) {
+    log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
+
     struct params *params = malloc(sizeof(struct params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
 
@@ -95,6 +88,9 @@ int main(int argc, char *argv[]) {
     if (pthread_create(&id_thread_door_1, NULL, open_doors, args_1)) throw_error(PROCESS_NAME, "Thread 1 Creation");
     if (pthread_create(&id_thread_door_2, NULL, open_doors, args_2)) throw_error(PROCESS_NAME, "Thread 2 Creation");
 
+    while(1) wait_for_departure(this, params);
+
+
     if (pthread_join(id_thread_door_1, NULL)) throw_error(PROCESS_NAME, "Thread 1 Join");
     if (pthread_join(id_thread_door_2, NULL)) throw_error(PROCESS_NAME, "Thread 2 Join");
 
@@ -133,16 +129,10 @@ void init_params(struct params *params) {
     if (msg_id_td_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_td_2 = msg_id_td_2;
 
-    const int shm_id_ts_1 = shared_block_alloc(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1), IPC_CREATE);
-    if (shm_id_ts_1 == IPC_ERROR) throw_error(PROCESS_NAME, "Shared Memory Allocation Error");
-
     struct passenger_stack_1 *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1));
     if (stack_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     stack_1->top = 0;
     params->stack_1 = stack_1;
-
-    const int shm_id_ts_2 = shared_block_alloc(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2), IPC_CREATE);
-    if (shm_id_ts_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Shared Memory Allocation Error");
 
     struct passenger_stack_2 *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2));
     if (stack_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
@@ -166,6 +156,10 @@ void init_train(struct train *this) {
     this->id = getpid();
     this->passenger_count = 0;
     this->bike_count = 0;
+
+    srand(getpid());
+    int return_interval = get_random_number(TRAIN_MIN_RETURN_INTERVAL, TRAIN_MAX_RETURN_INTERVAL);
+    this->return_interval = return_interval;
 }
 
 void init_conductor() {
@@ -179,7 +173,7 @@ void init_conductor() {
             if (exec_val == IPC_ERROR) throw_error(PROCESS_NAME, "Execl Error");
 
         default:
-            log_message(
+            if(VERBOSE_LOGS) log_message(
                 PROCESS_NAME,
                 "[SPAWN] CONDUCTOR: %d\n",
                 fork_val);
@@ -190,13 +184,14 @@ void *open_doors(void *_args) {
     const struct thread_args *args = _args;
     const struct params *params = args->params;
     struct train *this = args->this;
-    log_message(PROCESS_NAME, "[THREAD] Doors %d\n", args->door_number + 1);
+    if(VERBOSE_LOGS) (PROCESS_NAME, "[THREAD] Doors %d\n", args->door_number + 1);
 
     while (1) {
         struct message message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
-        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL) == IPC_ERROR) throw_error(
-            PROCESS_NAME, "Message Receive Error");
+        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL) == IPC_ERROR)
+            throw_error(
+                PROCESS_NAME, "Message Receive Error");
 
         int *shared_memory = args->door_number ? params->shared_memory_td_2 : params->shared_memory_td_1;
         const int limit = args->door_number ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
@@ -221,12 +216,46 @@ void *open_doors(void *_args) {
 
         sleep(PASSENGER_BOARDING_TIME);
         log_message(PROCESS_NAME,
-            "[DOOR %d] Welcome Passenger %d!\n",
-            args->door_number + 1,
-            passenger_id);
+                    "[DOOR %d] Welcome Passenger %d!\n",
+                    args->door_number + 1,
+                    passenger_id);
         sem_post(params->sem_id_td, args->door_number);
 
         message.mtype = MSG_TYPE_EMPTY;
         if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
     }
+}
+
+void wait_for_departure(struct train *this, struct params *params) {
+    struct message message;
+    if (message_queue_receive(params->msg_id_sm, &message, MSG_TYPE_EMPTY) == IPC_ERROR)
+        throw_error(PROCESS_NAME, "Message Receive Error");
+
+    int *shared_memory = params->shared_memory_sm;
+
+    const int save = shared_memory[TRAIN_NUM + 1];
+    shared_memory[save] = getpid();
+    shared_memory[TRAIN_NUM + 1] = (save + 1) % TRAIN_NUM;
+
+    message.mtype = MSG_TYPE_FULL;
+    if (message_queue_send(params->msg_id_sm, &message) == IPC_ERROR)
+        throw_error(PROCESS_NAME, "Message Send Error");
+
+    sem_wait(params->sem_id_sm, 1, 0);
+
+    // TODO: CALL/WAIT CONDUCTOR
+
+    sem_post(params->sem_id_sm, 2);
+
+    // TODO: CLEAN PASSENGERS, STACK ETC.
+
+    params->stack_1->top = 0;
+    params->stack_2->top = 0;
+    params->shared_memory_td_1[TRAIN_P_LIMIT] = 0;
+    params->shared_memory_td_1[TRAIN_P_LIMIT + 1] = 0;
+    params->shared_memory_td_2[TRAIN_B_LIMIT] = 0;
+    params->shared_memory_td_2[TRAIN_B_LIMIT + 1] = 0;
+
+    log_message(PROCESS_NAME, "[INFO] Returns` in %d\n", this->return_interval);
+    sleep(this->return_interval);
 }

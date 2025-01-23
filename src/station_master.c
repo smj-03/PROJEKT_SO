@@ -13,20 +13,53 @@ struct params {
     int *shared_memory;
 };
 
+void handle_train(struct params *);
+
 void init_params(struct params *);
 
 int main(int argc, char *argv[]) {
-    log_message(PROCESS_NAME, "[INIT] STATION MASTER PID: %d\n", getpid());
+    log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
     struct params *params = malloc(sizeof(struct params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
 
     init_params(params);
 
-    while (1);
+    while (1) handle_train(params);
 
     free(params);
     return 0;
+}
+
+void handle_train(struct params *params) {
+    struct message message;
+    if (message_queue_receive(params->msg_id_sm, &message, MSG_TYPE_FULL) == IPC_ERROR)
+        throw_error(PROCESS_NAME, "Message Receive Error");
+
+    sem_wait(params->sem_id_sm, 0, 0);
+
+    int *shared_memory = params->shared_memory;
+    const int read = shared_memory[TRAIN_NUM];
+    const int train_id = shared_memory[read];
+    shared_memory[TRAIN_NUM] = (shared_memory[TRAIN_NUM] + 1) % TRAIN_NUM;
+
+    log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has arrived!\n", train_id);
+
+    sleep(TRAIN_DEPART_TIME);
+
+    log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d is ready to depart!\n", train_id);
+
+    // TODO: CHANGE FOR SIGNAL
+    sem_post(params->sem_id_sm, 1);
+    sem_wait(params->sem_id_sm, 2, 0);
+
+    log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has departed!\n", train_id);
+
+    sem_post(params->sem_id_sm, 0);
+
+    message.mtype = MSG_TYPE_EMPTY;
+    if (message_queue_send(params->msg_id_sm, &message) == IPC_ERROR)
+        throw_error(PROCESS_NAME, "Message Send Error");
 }
 
 void init_params(struct params *params) {

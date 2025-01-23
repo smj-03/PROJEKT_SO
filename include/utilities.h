@@ -19,6 +19,8 @@
 #include <sys/msg.h>
 #include <sys/sem.h>
 
+#include <config.h>
+
 #define IPC_ERROR -1
 #define IPC_CREATE IPC_CREAT | IPC_EXCL | 0666
 #define IPC_GET IPC_CREAT | 0666
@@ -29,6 +31,16 @@
 struct message {
     long int mtype;
     int mvalue;
+};
+
+struct passenger_stack_1 {
+    int top;
+    int data[TRAIN_P_LIMIT];
+};
+
+struct passenger_stack_2 {
+    int top;
+    int data[TRAIN_B_LIMIT];
 };
 
 int log_message(const char *_process_name, const char *_format, ...);

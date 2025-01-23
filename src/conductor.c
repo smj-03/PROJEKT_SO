@@ -6,19 +6,9 @@
 
 #define PROCESS_NAME "CONDUCTOR"
 
-struct passenger_stack_1 {
-    int top;
-    int data[TRAIN_P_LIMIT];
-};
-
-struct passenger_stack_2 {
-    int top;
-    int data[TRAIN_B_LIMIT];
-};
-
 int main(int argc, char *argv[]) {
 
-    log_message(PROCESS_NAME, "[INIT] CONDUCTOR PID: %d\n", getpid());
+    log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
     struct passenger_stack_1 *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1));
     if (stack_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");

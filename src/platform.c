@@ -11,7 +11,7 @@ void spawn_passenger();
 int main(int argc, char *argv[]) {
     srand(time(NULL));
 
-    int a = 5;
+    int a = 0;
     while (a) {
         // a--;
         const int interval = get_random_number(PASSENGER_MIN_INTERVAL, PASSENGER_MAX_INTERVAL);
