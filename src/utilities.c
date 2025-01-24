@@ -106,6 +106,15 @@ int sem_wait(const int sem_id, const int number, const int flags) {
     return semop(sem_id, operations, 1);
 }
 
+int sem_wait_no_op(const int sem_id, const int number, const int flags) {
+    struct sembuf operations[1];
+    operations[0].sem_num = number;
+    operations[0].sem_op = 0;
+    operations[0].sem_flg = 0 | flags;
+
+    return semop(sem_id, operations, 1);
+}
+
 int sem_destroy(const int sem_id, const int number) {
     return semctl(sem_id, number, IPC_RMID, NULL);
 }
@@ -143,8 +152,8 @@ int message_queue_send(const int msg_id, const struct message *message) {
     return msgsnd(msg_id, message, sizeof(message->mvalue), 0);
 }
 
-ssize_t message_queue_receive(const int msg_id, struct message *message, const long int mtype) {
-    return msgrcv(msg_id, message, sizeof(message->mvalue), mtype, 0);
+ssize_t message_queue_receive(const int msg_id, struct message *message, const long int mtype, const int flags) {
+    return msgrcv(msg_id, message, sizeof(message->mvalue), mtype, flags);
 }
 
 int message_queue_destroy(const int msg_id) {

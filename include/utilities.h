@@ -11,6 +11,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <pthread.h>
 #include <sys/wait.h>
@@ -59,6 +60,8 @@ int sem_post(int sem_id, int number);
 
 int sem_wait(int sem_id, int number, int flags);
 
+int sem_wait_no_op(int sem_id, int number, int flags);
+
 int sem_destroy(int sem_id, int number);
 
 int shared_block_alloc(key_t key, size_t size, int flags);
@@ -73,7 +76,7 @@ int message_queue_alloc(key_t key, int flags);
 
 int message_queue_send(int msg_id, const struct message *message);
 
-ssize_t message_queue_receive(int msg_id, struct message *message, long int mtype);
+ssize_t message_queue_receive(int msg_id, struct message *message, long int mtype, int flags);
 
 int message_queue_destroy(int msg_id);
 

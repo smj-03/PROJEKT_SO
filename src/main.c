@@ -8,6 +8,10 @@ int main(int argc, char *argv[]) {
     char *processes[MAIN_PROCESS_NUM] = {"PLATFORM", "STATION_MASTER"};
 
     // TRAIN IPC INIT
+    const int sem_id_ta = sem_alloc(SEM_TRAIN_ARRIVAL_KEY, 1, IPC_CREATE);
+    if (sem_id_ta == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
+    if(sem_init(sem_id_ta, 0, 0) == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Control Error");
+
     const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_CREATE);
     if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
 

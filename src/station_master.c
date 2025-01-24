@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
 void handle_train(struct params *params) {
     struct message message;
-    if (message_queue_receive(params->msg_id_sm, &message, MSG_TYPE_FULL) == IPC_ERROR)
+    if (message_queue_receive(params->msg_id_sm, &message, MSG_TYPE_FULL, 0) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Message Receive Error");
 
     sem_wait(params->sem_id_sm, 0, 0);
@@ -42,6 +42,8 @@ void handle_train(struct params *params) {
     const int read = shared_memory[TRAIN_NUM];
     const int train_id = shared_memory[read];
     shared_memory[TRAIN_NUM] = (shared_memory[TRAIN_NUM] + 1) % TRAIN_NUM;
+
+    if (kill(train_id, SIGCONT) == IPC_ERROR) throw_error(PROCESS_NAME, "Sigcont Error");
 
     log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has arrived!\n", train_id);
 
