@@ -5,7 +5,6 @@
 
 int main(int argc, char *argv[]) {
     log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
-    char *processes[MAIN_PROCESS_NUM] = {"PLATFORM", "STATION_MASTER"};
 
     // TRAIN IPC INIT
     const int sem_id_ta = sem_alloc(SEM_TRAIN_ARRIVAL_KEY, 1, IPC_CREATE);
@@ -66,28 +65,38 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < TRAIN_P_LIMIT; i++)
         if (message_queue_send(msg_id_sm, &train_message) == IPC_ERROR) throw_error(
             PROCESS_NAME, "Queue Initialization Error");
-    
 
-    for (int i = 0; i < MAIN_PROCESS_NUM; i++) {
-        switch (fork()) {
-            case IPC_ERROR:
-                throw_error(PROCESS_NAME, "Fork Error");
+    const int platform_id = fork();
+    switch (platform_id) {
+        case IPC_ERROR:
+            throw_error(PROCESS_NAME,  " Platform Fork Error");
 
-            case 0:
-                char path[20];
-                get_process_path(path, processes[i]);
-                const int exec_val = execl(path, processes[i], NULL);
-                if (exec_val == IPC_ERROR)
-                    throw_error(PROCESS_NAME, "%s Execl Error", processes[i]);
+        case 0:
+            if (execl("./PLATFORM", "PLATFORM", NULL) == IPC_ERROR)
+                throw_error(PROCESS_NAME, "Platform Execl Error");
 
-            default:
-                if (VERBOSE_LOGS) log_message(PROCESS_NAME, "[SPAWN] %s process\n", processes[i]);
-        }
+        default:
+            if (VERBOSE_LOGS) log_message(PROCESS_NAME, "[SPAWN] PLATFORM %d\n", platform_id);
+    }
+
+    char platform_id_str[10];
+    snprintf(platform_id_str, sizeof(platform_id_str), "%d", platform_id);
+    const int station_master_id = fork();
+    switch (station_master_id) {
+        case IPC_ERROR:
+            throw_error(PROCESS_NAME, "Station Master Fork Error");
+
+        case 0:
+            if (execl("./STATION_MASTER", "STATION_MASTER", platform_id_str, NULL) == IPC_ERROR)
+                throw_error(PROCESS_NAME, "Station Master Execl Error");
+
+        default:
+            if (VERBOSE_LOGS) log_message(PROCESS_NAME, "[SPAWN] STATION MASTER %d\n", station_master_id);
     }
 
     for(int i = 0; i< TRAIN_NUM; i++) {
-        const int fork_val = fork();
-        switch (fork_val) {
+        const int train_id = fork();
+        switch (train_id) {
             case IPC_ERROR:
                 throw_error(PROCESS_NAME, "Fork Error");
 
@@ -96,11 +105,11 @@ int main(int argc, char *argv[]) {
                     throw_error(PROCESS_NAME, "Execl Error");
 
             default:
-                if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[SPAWN] TRAIN process %d\n", fork_val);
+                if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[SPAWN] TRAIN process %d\n", train_id);
         }
     }
 
-    for (int i = 0; i < MAIN_PROCESS_NUM; i++) {
+    for (int i = 0; i < TRAIN_NUM + 2; i++) {
         wait((int *) NULL);
     }
 

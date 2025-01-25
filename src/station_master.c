@@ -13,17 +13,34 @@ struct params {
     int *shared_memory;
 };
 
+struct thread_args {
+    int platform_id;
+};
+
 void handle_train(struct params *);
+
+void *close_platform(void *);
 
 void init_params(struct params *);
 
 int main(int argc, char *argv[]) {
+    const int platform_id = atoi(argv[1]);
     log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
+    log_message(PROCESS_NAME, "[INIT] PLATFORM ID: %d\n", platform_id);
 
     struct params *params = malloc(sizeof(struct params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
 
     init_params(params);
+
+    pthread_t close_thread_id;
+
+    struct thread_args *close_args = malloc(sizeof(struct thread_args));
+    if (close_args == NULL) throw_error(PROCESS_NAME, "Thread Arguments Creation");
+    close_args->platform_id = platform_id;
+
+    if (pthread_create(&close_thread_id, NULL, close_platform, close_args))
+        throw_error(PROCESS_NAME, "Thread 1 Creation");
 
     while (1) handle_train(params);
 
@@ -62,6 +79,15 @@ void handle_train(struct params *params) {
     message.mtype = MSG_TYPE_EMPTY;
     if (message_queue_send(params->msg_id_sm, &message) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Message Send Error");
+}
+
+void *close_platform(void *_args) {
+    const struct thread_args *args = _args;
+
+    sleep(PLATFORM_CLOSE_AFTER);
+    log_message(PROCESS_NAME, "[INFO] Closing Platform\n");
+    kill(args->platform_id, SIGUSR2);
+    return NULL;
 }
 
 void init_params(struct params *params) {

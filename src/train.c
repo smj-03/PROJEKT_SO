@@ -41,8 +41,6 @@ volatile int received_depart_signal;
 
 void handle_sigcont(int);
 
-// void handle_sigusr1(int);
-
 void init_params(struct params *);
 
 void init_train(struct train *);
