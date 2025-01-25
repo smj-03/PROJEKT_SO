@@ -159,3 +159,32 @@ ssize_t message_queue_receive(const int msg_id, struct message *message, const l
 int message_queue_destroy(const int msg_id) {
     return msgctl(msg_id, IPC_RMID, NULL);
 }
+
+int setup_signal_handler(int signal, void (*handler)(int)) {
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+
+    if (sigaction(signal, &sa, NULL) == -1) return -1;
+    return 0;
+}
+
+int wait_for_signal(const int signal) {
+    sigset_t new_set, old_set;
+    int sig;
+
+    sigemptyset(&new_set);
+    sigaddset(&new_set, signal);
+
+    if (sigprocmask(SIG_BLOCK, &new_set, &old_set) == -1) return -1;
+
+    if (sigwait(&new_set, &sig) == -1) {
+        sigprocmask(SIG_SETMASK, &old_set, NULL);
+        return -1;
+    }
+
+    if(sigprocmask(SIG_SETMASK, &old_set, NULL) == -1) return -1;
+
+    return sig;
+}

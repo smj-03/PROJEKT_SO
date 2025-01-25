@@ -43,7 +43,7 @@ void handle_train(struct params *params) {
     const int train_id = shared_memory[read];
     shared_memory[TRAIN_NUM] = (shared_memory[TRAIN_NUM] + 1) % TRAIN_NUM;
 
-    if (kill(train_id, SIGCONT) == IPC_ERROR) throw_error(PROCESS_NAME, "Sigcont Error");
+    if (kill(train_id, SIGCONT) == IPC_ERROR) throw_error(PROCESS_NAME, "SIGCONT Error");
 
     log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has arrived!\n", train_id);
 
@@ -51,8 +51,8 @@ void handle_train(struct params *params) {
 
     log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d is ready to depart!\n", train_id);
 
-    // TODO: CHANGE FOR SIGNAL
-    sem_post(params->sem_id_sm, 1);
+    if (kill(train_id, SIGUSR1) == IPC_ERROR) throw_error(PROCESS_NAME, "SIGUSR1 Error");
+
     sem_wait(params->sem_id_sm, 2, 0);
 
     log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has departed!\n", train_id);

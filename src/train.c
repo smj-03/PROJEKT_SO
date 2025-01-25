@@ -35,11 +35,13 @@ struct thread_args {
     struct params *params;
 };
 
-int has_arrived = 0;
+volatile int has_arrived;
 
-void handle_sigcont(int sig);
+volatile int received_depart_signal;
 
-void setup_sigcont_handler();
+void handle_sigcont(int);
+
+// void handle_sigusr1(int);
 
 void init_params(struct params *);
 
@@ -53,7 +55,8 @@ void *open_doors(void *);
 void arrive_and_depart(struct train *, struct params *);
 
 int main(int argc, char *argv[]) {
-    setup_sigcont_handler();
+    if (setup_signal_handler(SIGCONT, handle_sigcont) == IPC_ERROR)
+        throw_error(PROCESS_NAME, "SIGCONT Handler Error");
 
     log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
@@ -86,20 +89,8 @@ int main(int argc, char *argv[]) {
 }
 
 void handle_sigcont(int sig) {
-    printf("Received SIGCONT, continuing...\n");
+    write(STDOUT_FILENO, "Received SIGCONT, continuing...\n", 32);
     has_arrived = 1;
-}
-
-void setup_sigcont_handler() {
-    struct sigaction sa;
-    sa.sa_handler = handle_sigcont;
-    sa.sa_flags = 0;
-    sigemptyset(&sa.sa_mask);
-
-    if (sigaction(SIGCONT, &sa, NULL) == -1) {
-        perror("sigaction");
-        exit(EXIT_FAILURE);
-    }
 }
 
 void init_params(struct params *params) {
@@ -190,20 +181,27 @@ void *open_doors(void *_args) {
     struct train *this = args->this;
     if (VERBOSE_LOGS) (PROCESS_NAME, "[THREAD] Doors %d\n", args->door_number + 1);
 
-    while (has_arrived) {
+    int handled_depart_signal = 0;
+
+    while (has_arrived && !received_depart_signal) {
         struct message message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
 
-        // FIXME: FIND MORE OPTIMAL SOLUTION
-        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL, IPC_NOWAIT) == IPC_ERROR)
-            continue;
+        if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL, 0) == IPC_ERROR)
+            throw_error(PROCESS_NAME, "Message Receive Error");
 
-        // if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL, 0) == IPC_ERROR)
-        //     throw_error(PROCESS_NAME, "Message Receive Error");
+        if (received_depart_signal) {
+            message.mtype = MSG_TYPE_EMPTY;
+            if (message_queue_send(msg_id, &message) == IPC_ERROR)
+                throw_error(PROCESS_NAME, "Message Send Error");
+            handled_depart_signal = 1;
+            continue;
+        }
 
         int *shared_memory = args->door_number ? params->shared_memory_td_2 : params->shared_memory_td_1;
         const int limit = args->door_number ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
 
+        // TODO: CHECK IF THIS SEM IS USEFUL NOW
         sem_wait(params->sem_id_td, args->door_number, 0);
         const int read = shared_memory[limit];
         const int passenger_id = shared_memory[read];
@@ -231,12 +229,27 @@ void *open_doors(void *_args) {
         sem_post(params->sem_id_td, args->door_number);
 
         message.mtype = MSG_TYPE_EMPTY;
-        if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
+        if (message_queue_send(msg_id, &message) == IPC_ERROR)
+            throw_error(PROCESS_NAME, "Message Send Error");
+    }
+
+    if(!handled_depart_signal) {
+        struct message poison_message;
+        const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
+        if (message_queue_receive(msg_id, &poison_message, MSG_TYPE_FULL, 0) == IPC_ERROR)
+            throw_error(PROCESS_NAME, "Message Receive Error");
+
+        poison_message.mtype = MSG_TYPE_EMPTY;
+        if (message_queue_send(msg_id, &poison_message) == IPC_ERROR)
+            throw_error(PROCESS_NAME, "Message Send Error");
+        handled_depart_signal = 1;
     }
 }
 
 void arrive_and_depart(struct train *this, struct params *params) {
-    // sem post arrival semaphore
+    has_arrived = 0;
+    received_depart_signal = 0;
+    // TODO: sem post arrival semaphore?
 
     struct message message;
     if (message_queue_receive(params->msg_id_sm, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR)
@@ -276,10 +289,16 @@ void arrive_and_depart(struct train *this, struct params *params) {
     if (pthread_create(&id_thread_door_1, NULL, open_doors, args_1)) throw_error(PROCESS_NAME, "Thread 1 Creation");
     if (pthread_create(&id_thread_door_2, NULL, open_doors, args_2)) throw_error(PROCESS_NAME, "Thread 2 Creation");
 
-    sem_wait(params->sem_id_sm, 1, 0); // sem 2 wait for departure signal
+    if (wait_for_signal(SIGUSR1) == IPC_ERROR) throw_error(PROCESS_NAME, "Signal Wait Error");
+    received_depart_signal = 1;
+
+    struct message poison_message;
+    poison_message.mtype = MSG_TYPE_FULL;
+    message_queue_send(params->msg_id_td_1, &poison_message);
+    message_queue_send(params->msg_id_td_2, &poison_message);
+    log_message(PROCESS_NAME, "[INFO] Departure signal received: %d\n", received_depart_signal);
 
     // TODO: CALL/WAIT CONDUCTOR
-
     has_arrived = 0;
 
     // TODO: CHECK IF THE DOORS CLOSED

@@ -16,13 +16,15 @@ int main(int argc, char *argv[]) {
     struct passenger_stack_2 *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2));
     if (stack_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
 
-    while(1) {
-        if(VERBOSE_LOGS) {
-            sleep(5);
-            log_message(PROCESS_NAME, "[STACK 1] Top: %d [0]: %d\n", stack_1->top, stack_1->data[0]);
-            log_message(PROCESS_NAME, "[STACK 2] Top: %d [0]: %d\n", stack_2->top, stack_2->data[0]);
-        }
-    }
+    pause();
+
+    // while(1) {
+    //     if(VERBOSE_LOGS) {
+    //         sleep(5);
+    //         log_message(PROCESS_NAME, "[STACK 1] Top: %d [0]: %d\n", stack_1->top, stack_1->data[0]);
+    //         log_message(PROCESS_NAME, "[STACK 2] Top: %d [0]: %d\n", stack_2->top, stack_2->data[0]);
+    //     }
+    // }
 
     return 0;
 }

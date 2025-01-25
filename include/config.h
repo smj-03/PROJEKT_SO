@@ -21,7 +21,7 @@
 
 // TRAIN
 #define TRAIN_NUM 2 // N
-#define TRAIN_DEPART_TIME 20 // T
+#define TRAIN_DEPART_TIME 10 // T
 #define TRAIN_P_LIMIT 100 // P
 #define TRAIN_B_LIMIT 50  // R
 #define TRAIN_MIN_RETURN_INTERVAL 30

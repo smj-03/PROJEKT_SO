@@ -80,4 +80,8 @@ ssize_t message_queue_receive(int msg_id, struct message *message, long int mtyp
 
 int message_queue_destroy(int msg_id);
 
+int setup_signal_handler(int signal, void (*handler)(int));
+
+int wait_for_signal(int signal);
+
 #endif //UTILITIES_H
