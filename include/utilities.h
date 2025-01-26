@@ -84,4 +84,6 @@ int push(struct passenger_stack *stack, int value);
 
 int pop(struct passenger_stack *stack);
 
+_Bool has(int arr[], int value, int length);
+
 #endif //UTILITIES_H

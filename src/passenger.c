@@ -21,6 +21,8 @@ struct params {
     int *shared_memory_counter;
 };
 
+void handle_sigusr1(int);
+
 void init_params(struct params *);
 
 void init_passenger(struct passenger *);
@@ -28,6 +30,8 @@ void init_passenger(struct passenger *);
 void board_train(struct passenger *, struct params *);
 
 int main() {
+    setup_signal_handler(SIGUSR1, handle_sigusr1);
+
     struct params *params = malloc(sizeof(struct params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
 
@@ -41,15 +45,21 @@ int main() {
 
     board_train(this, params);
 
+    while (1) {
+        pause();
+        log_message(PROCESS_NAME, "[EXIT] ID: %d\n", getpid());
+        board_train(this, params);
+    }
 
-    if(VERBOSE_LOGS) log_message(
-        PROCESS_NAME,
-        "[INIT]   ID: %-8d BIKE: %-3d MSG_IDs: %d %d\n",
-        this->id,
-        this->has_bike,
-        params->msg_id_td_1,
-        params->msg_id_td_2
-    );
+    if (VERBOSE_LOGS)
+        log_message(
+            PROCESS_NAME,
+            "[INIT]   ID: %-8d BIKE: %-3d MSG_IDs: %d %d\n",
+            this->id,
+            this->has_bike,
+            params->msg_id_td_1,
+            params->msg_id_td_2
+        );
 
     shared_block_detach(params->shared_memory_td_1);
     shared_block_detach(params->shared_memory_td_2);
@@ -57,6 +67,10 @@ int main() {
     free(this);
 
     return 0;
+}
+
+void handle_sigusr1(int sig) {
+    // write(STDOUT_FILENO, "Received SIGUSR1, continuing...\n", 32);
 }
 
 void init_params(struct params *params) {
@@ -102,7 +116,8 @@ void board_train(struct passenger *this, struct params *params) {
 
     struct message message;
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
-    if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Receive Error");
+    if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR) throw_error(
+        PROCESS_NAME, "Message Receive Error");
 
     int *shared_memory = this->has_bike ? params->shared_memory_td_2 : params->shared_memory_td_1;
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;

@@ -313,10 +313,10 @@ void arrive_and_depart(struct train *this, struct params *params) {
     log_message(PROCESS_NAME,
                 "[%d][INFO] Passengers taken: %d, Bikes taken: %d, Returns in %d\n",
                 this->id,
-                this->passenger_count,
-                this->bike_count,
-                // params->stack_1->top,
-                // params->stack_2->top,
+                // this->passenger_count,
+                // this->bike_count,
+                params->stack_1->top,
+                params->stack_2->top,
                 this->return_interval);
 
     for (int i = 0; i < params->stack_1->top; i++) {

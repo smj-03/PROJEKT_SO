@@ -201,3 +201,9 @@ int pop(struct passenger_stack *stack) {
         return stack->data[--stack->top];
     return -1;
 }
+
+_Bool has(int arr[], int value, int length) {
+    for (int i = 0; i < length; i++)
+        if (arr[i] == value) return 1;
+    return 0;
+}
