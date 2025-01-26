@@ -174,7 +174,7 @@ void *open_doors(void *_args) {
 
     int handled_depart_signal = 0;
 
-    while (has_arrived && !received_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY - 1) {
+    while (has_arrived && !received_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY) {
         struct message message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
 
@@ -219,7 +219,7 @@ void *open_doors(void *_args) {
             throw_error(PROCESS_NAME, "Message Send Error");
     }
 
-    if (!handled_depart_signal) {
+    if (!handled_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY) {
         struct message poison_message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
         if (message_queue_receive(msg_id, &poison_message, MSG_TYPE_FULL, 0) == IPC_ERROR)
