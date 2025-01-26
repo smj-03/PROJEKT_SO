@@ -27,8 +27,15 @@ void *close_platform(void *);
 
 void init_params(struct params *);
 
+void kill_all_trains(int []);
+
 int main(int argc, char *argv[]) {
     const int platform_id = atoi(argv[1]);
+
+    int train_ids[TRAIN_NUM];
+    for (int i = 0; i < TRAIN_NUM; i++)
+        train_ids[i] = atoi(argv[i + 2]);
+
     log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
     log_message(PROCESS_NAME, "[INIT] PLATFORM ID: %d\n", platform_id);
 
@@ -53,6 +60,7 @@ int main(int argc, char *argv[]) {
         handle_train(params);
     }
 
+    kill_all_trains(train_ids);
     sem_post(params->sem_id_p, 0);
 
     free(params);
@@ -122,6 +130,14 @@ void init_params(struct params *params) {
     params->shared_memory_counter = shared_memory_counter;
 
     const int sem_id_p = sem_alloc(SEM_PLATFORM_KEY, 1, IPC_GET);
-    if(sem_id_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
+    if (sem_id_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
     params->sem_id_p = sem_id_p;
+}
+
+void kill_all_trains(int train_ids[]) {
+    for (int i = 0; i < TRAIN_NUM; i++)
+        if (kill(train_ids[i], SIGKILL) == IPC_ERROR)
+            log_message(PROCESS_NAME, "Failed to kill train process %d\n", train_ids[i]);
+        else
+            log_message(PROCESS_NAME, "Killed train process %d\n", train_ids[i]);
 }

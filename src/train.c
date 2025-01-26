@@ -39,6 +39,8 @@ volatile int has_arrived;
 
 volatile int received_depart_signal;
 
+volatile int platform_open = 1;
+
 void handle_sigcont(int);
 
 void init_params(struct params *);
