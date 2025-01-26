@@ -9,6 +9,7 @@
 struct params {
     int sem_id_ta;
     int sem_id_td;
+    int sem_id_c;
     int msg_id_td_1;
     int msg_id_td_2;
     int *shared_memory_td_1;
@@ -104,6 +105,10 @@ void init_params(struct params *params) {
     const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_GET);
     if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_td = sem_id_td;
+
+    const int sem_id_c = sem_alloc(SEM_CONDUCTOR_KEY, 2, IPC_GET);
+    if (sem_id_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
+    params->sem_id_c = sem_id_c;
 
     int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
     if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
@@ -304,6 +309,9 @@ void arrive_and_depart(struct train *this, struct params *params) {
     // TODO: CHECK IF THE DOORS CLOSED
     if (pthread_join(id_thread_door_1, NULL)) throw_error(PROCESS_NAME, "Thread 1 Join");
     if (pthread_join(id_thread_door_2, NULL)) throw_error(PROCESS_NAME, "Thread 2 Join");
+
+    sem_post(params->sem_id_c, 0);
+    sem_wait(params->sem_id_c, 1, 0);
 
     if (kill(conductor_pid, SIGKILL) == IPC_ERROR) throw_error(PROCESS_NAME, "Sigkill Error");
     if (waitpid(conductor_pid, NULL, 0) == -1) throw_error(PROCESS_NAME, "Waitpid Error");

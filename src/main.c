@@ -63,6 +63,13 @@ int main(int argc, char *argv[]) {
     const int msg_id_sm = message_queue_alloc(MSG_STATION_MASTER_KEY,IPC_CREATE);
     if (msg_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
 
+    // CONDUCTOR IPC INIT
+    const int sem_id_c = sem_alloc(SEM_CONDUCTOR_KEY, 2, IPC_CREATE);
+    if (sem_id_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
+    for(int i=0; i<2; i++)
+        if(sem_init(sem_id_c, i, 0) == IPC_ERROR)
+            throw_error(PROCESS_NAME, "Semaphore Control Error");
+
     // PLATFORM IPC INIT
     const int sem_id_p = sem_alloc(SEM_PLATFORM_KEY, 1, IPC_CREATE);
     if (sem_id_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
@@ -111,9 +118,9 @@ int main(int argc, char *argv[]) {
 
     strncpy(station_master_args[0], "STATION_MASTER", 15);
     snprintf(station_master_args[1], 10, "%d", platform_id);
-    for (int i = 0; i < TRAIN_NUM; i++) {
+    for (int i = 0; i < TRAIN_NUM; i++)
         snprintf(station_master_args[i + 2], 10, "%d", train_ids[i]);
-    }
+
     station_master_args[TRAIN_NUM + 2] = NULL;
 
     const int station_master_id = fork();
@@ -122,8 +129,6 @@ int main(int argc, char *argv[]) {
             throw_error(PROCESS_NAME, "Station Master Fork Error");
 
         case 0:
-            const char *custom_process_name = "STATION_MASTER";
-            strncpy(argv[0], custom_process_name, strlen(argv[0]));
             if (execv("./STATION_MASTER", station_master_args) == IPC_ERROR)
                 throw_error(PROCESS_NAME, "Station Master Execl Error");
 

@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <sys/wait.h>
 #include <sys/shm.h>
+#include <sys/prctl.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/sem.h>

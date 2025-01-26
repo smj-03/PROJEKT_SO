@@ -16,7 +16,7 @@ int log_message(const char *_process_name, const char *_format, ...) {
             local_time->tm_min,
             local_time->tm_sec);
 
-    fprintf(stdout, "[%s%s%s] ",
+    fprintf(stdout, "[%s%s%s]",
             ANSI_COLOR_GREEN,
             _process_name,
             ANSI_COLOR_RESET);

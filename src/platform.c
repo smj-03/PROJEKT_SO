@@ -3,7 +3,6 @@
 //
 #include <utilities.h>
 #include <config.h>
-#include <math.h>
 
 #define PROCESS_NAME "PLATFORM"
 
