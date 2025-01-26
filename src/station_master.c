@@ -9,13 +9,17 @@
 
 struct params {
     int sem_id_sm;
+    int sem_id_p;
     int msg_id_sm;
-    int *shared_memory;
+    int *shared_memory_train;
+    int *shared_memory_counter;
 };
 
 struct thread_args {
     int platform_id;
 };
+
+volatile int platform_closed = 0;
 
 void handle_train(struct params *);
 
@@ -42,7 +46,14 @@ int main(int argc, char *argv[]) {
     if (pthread_create(&close_thread_id, NULL, close_platform, close_args))
         throw_error(PROCESS_NAME, "Thread 1 Creation");
 
-    while (1) handle_train(params);
+    const int *passenger_counter = params->shared_memory_counter;
+
+    while (!platform_closed || passenger_counter[0]) {
+        log_message(PROCESS_NAME, "[INFO] Passengers on the platform %d\n", params->shared_memory_counter[0]);
+        handle_train(params);
+    }
+
+    sem_post(params->sem_id_p, 0);
 
     free(params);
     return 0;
@@ -55,7 +66,7 @@ void handle_train(struct params *params) {
 
     sem_wait(params->sem_id_sm, 0, 0);
 
-    int *shared_memory = params->shared_memory;
+    int *shared_memory = params->shared_memory_train;
     const int read = shared_memory[TRAIN_NUM];
     const int train_id = shared_memory[read];
     shared_memory[TRAIN_NUM] = (shared_memory[TRAIN_NUM] + 1) % TRAIN_NUM;
@@ -87,6 +98,9 @@ void *close_platform(void *_args) {
     sleep(PLATFORM_CLOSE_AFTER);
     log_message(PROCESS_NAME, "[INFO] Closing Platform\n");
     kill(args->platform_id, SIGUSR2);
+
+    platform_closed = 1;
+
     return NULL;
 }
 
@@ -95,11 +109,19 @@ void init_params(struct params *params) {
     if (sem_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_sm = sem_id_sm;
 
-    int *shared_memory = shared_block_attach(SHM_STATION_MASTER_KEY, (TRAIN_NUM + 2) * sizeof(int));
-    if (shared_memory == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    params->shared_memory = shared_memory;
+    int *shared_memory_train = shared_block_attach(SHM_STATION_MASTER_TRAIN_KEY, (TRAIN_NUM + 2) * sizeof(int));
+    if (shared_memory_train == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    params->shared_memory_train = shared_memory_train;
 
     const int msg_id_sm = message_queue_alloc(MSG_STATION_MASTER_KEY,IPC_GET);
     if (msg_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_sm = msg_id_sm;
+
+    int *shared_memory_counter = shared_block_attach(SHM_STATION_MASTER_PLATFORM_KEY, sizeof(int));
+    if (shared_memory_counter == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    params->shared_memory_counter = shared_memory_counter;
+
+    const int sem_id_p = sem_alloc(SEM_PLATFORM_KEY, 1, IPC_GET);
+    if(sem_id_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
+    params->sem_id_p = sem_id_p;
 }

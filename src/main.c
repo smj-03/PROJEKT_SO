@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
     // TRAIN IPC INIT
     const int sem_id_ta = sem_alloc(SEM_TRAIN_ARRIVAL_KEY, 1, IPC_CREATE);
     if (sem_id_ta == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
-    if(sem_init(sem_id_ta, 0, 0) == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Control Error");
+    if (sem_init(sem_id_ta, 0, 0) == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Control Error");
 
     const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_CREATE);
     if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
@@ -54,11 +54,20 @@ int main(int argc, char *argv[]) {
             throw_error(PROCESS_NAME, "Semaphore Control Error");
     sem_post(sem_id_sm, 0);
 
-    if (shared_block_alloc(SHM_STATION_MASTER_KEY, (TRAIN_NUM+ 2) * sizeof(int), IPC_CREATE) == IPC_ERROR)
+    if (shared_block_alloc(SHM_STATION_MASTER_TRAIN_KEY, (TRAIN_NUM+ 2) * sizeof(int), IPC_CREATE) == IPC_ERROR)
+        throw_error(PROCESS_NAME, "Shared Memory Allocation Error");
+
+    if (shared_block_alloc(SHM_STATION_MASTER_PLATFORM_KEY, sizeof(int), IPC_CREATE) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Shared Memory Allocation Error");
 
     const int msg_id_sm = message_queue_alloc(MSG_STATION_MASTER_KEY,IPC_CREATE);
     if (msg_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
+
+    // PLATFORM IPC INIT
+    const int sem_id_p = sem_alloc(SEM_PLATFORM_KEY, 1, IPC_CREATE);
+    if (sem_id_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
+    if (sem_init(sem_id_p, 0, 0) == IPC_ERROR)
+        throw_error(PROCESS_NAME, "Semaphore Control Error");
 
     struct message train_message;
     train_message.mtype = MSG_TYPE_EMPTY;

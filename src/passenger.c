@@ -18,6 +18,7 @@ struct params {
     int msg_id_td_2;
     int *shared_memory_td_1;
     int *shared_memory_td_2;
+    int *shared_memory_counter;
 };
 
 void init_params(struct params *);
@@ -35,8 +36,11 @@ int main() {
     if (this == NULL) throw_error(PROCESS_NAME, "Passenger Error");
 
     init_params(params);
+
     init_passenger(this);
+
     board_train(this, params);
+
 
     if(VERBOSE_LOGS) log_message(
         PROCESS_NAME,
@@ -75,6 +79,11 @@ void init_params(struct params *params) {
     const int msg_id_td_2 = message_queue_alloc(MSG_TRAIN_DOOR_2_KEY,IPC_GET);
     if (msg_id_td_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_td_2 = msg_id_td_2;
+
+    int *shared_memory_counter = shared_block_attach(SHM_STATION_MASTER_PLATFORM_KEY, sizeof(int));
+    if (shared_memory_counter == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    shared_memory_counter[0]++;
+    params->shared_memory_counter = shared_memory_counter;
 }
 
 void init_passenger(struct passenger *this) {
@@ -108,6 +117,7 @@ void board_train(struct passenger *this, struct params *params) {
                 this->has_bike);
 
     this->is_boarded = 1;
+    params->shared_memory_counter[0]--;
 
     message.mtype = MSG_TYPE_FULL;
     if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");

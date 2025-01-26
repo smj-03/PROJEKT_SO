@@ -133,7 +133,7 @@ void init_params(struct params *params) {
     if (sem_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_sm = sem_id_sm;
 
-    int *shared_memory = shared_block_attach(SHM_STATION_MASTER_KEY, (TRAIN_NUM + 2) * sizeof(int));
+    int *shared_memory = shared_block_attach(SHM_STATION_MASTER_TRAIN_KEY, (TRAIN_NUM + 2) * sizeof(int));
     if (shared_memory == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_sm = shared_memory;
 
@@ -319,9 +319,9 @@ void arrive_and_depart(struct train *this, struct params *params) {
                 // params->stack_2->top,
                 this->return_interval);
 
-    for (int i = 0; i < params->stack_1->top; i++) {
-        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
-    }
+    // for (int i = 0; i < params->stack_1->top; i++) {
+        // log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
+    // }
 
     this->passenger_count = 0;
     this->bike_count = 0;
@@ -332,6 +332,8 @@ void arrive_and_depart(struct train *this, struct params *params) {
     // params->shared_memory_td_2[TRAIN_B_LIMIT] = 0;
     // params->shared_memory_td_2[TRAIN_B_LIMIT + 1] = 0;
 
+
+    // TODO: ADD THEM TO STRUCT AND FREE THEM THEN
     free(args_1);
     free(args_2);
 
