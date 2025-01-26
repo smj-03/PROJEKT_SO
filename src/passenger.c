@@ -70,7 +70,7 @@ int main() {
 }
 
 void handle_sigusr1(int sig) {
-    // write(STDOUT_FILENO, "Received SIGUSR1, continuing...\n", 32);
+    write(STDOUT_FILENO, "Received SIGUSRX, continuing...\n", 32);
 }
 
 void init_params(struct params *params) {
