@@ -14,8 +14,8 @@ struct params {
     int msg_id_td_2;
     int *shared_memory_td_1;
     int *shared_memory_td_2;
-    struct passenger_stack_1 *stack_1;
-    struct passenger_stack_2 *stack_2;
+    struct passenger_stack *stack_1;
+    struct passenger_stack *stack_2;
     pthread_mutex_t *mutex;
 
     int sem_id_sm;
@@ -56,10 +56,10 @@ void *open_doors(void *);
 void arrive_and_depart(struct train *, struct params *);
 
 int main(int argc, char *argv[]) {
+    log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
+
     if (setup_signal_handler(SIGCONT, handle_sigcont) == IPC_ERROR)
         throw_error(PROCESS_NAME, "SIGCONT Handler Error");
-
-    log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
     struct params *params = malloc(sizeof(struct params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
@@ -71,16 +71,7 @@ int main(int argc, char *argv[]) {
 
     init_train(this);
 
-    if (VERBOSE_LOGS)
-        log_message(
-            PROCESS_NAME,
-            "[INIT]   ID: %-8d SEM_ID: %d MSG_IDs: %d %d\n",
-            this->id,
-            params->sem_id_td,
-            params->msg_id_td_1,
-            params->msg_id_td_2
-        );
-
+    // TODO: CHANGE KILL FOR FLAG CHANGE / SIGKILL OVERRIDE
     while (1) arrive_and_depart(this, params);
 
     free(this);
@@ -126,12 +117,12 @@ void init_params(struct params *params) {
     if (msg_id_td_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_td_2 = msg_id_td_2;
 
-    struct passenger_stack_1 *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack_1));
+    struct passenger_stack *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack));
     if (stack_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     stack_1->top = 0;
     params->stack_1 = stack_1;
 
-    struct passenger_stack_2 *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack_2));
+    struct passenger_stack *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack));
     if (stack_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     stack_2->top = 0;
     params->stack_2 = stack_2;
@@ -188,7 +179,7 @@ void *open_doors(void *_args) {
 
     int handled_depart_signal = 0;
 
-    while (has_arrived && !received_depart_signal) {
+    while (has_arrived && !received_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY-1) {
         struct message message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
 
@@ -215,13 +206,13 @@ void *open_doors(void *_args) {
 
         pthread_mutex_lock(params->mutex);
         this->passenger_count++;
-        if (params->stack_1->top != TRAIN_P_LIMIT - 1)
-            params->stack_1->data[params->stack_1->top++] = passenger_id;
+        if (push(params->stack_1, passenger_id) == -1)
+            throw_error(PROCESS_NAME, "Stack Push Error");
 
         if (args->door_number == 1) {
             this->bike_count++;
-            if (params->stack_2->top != TRAIN_P_LIMIT - 1)
-                params->stack_2->data[params->stack_2->top++] = passenger_id;
+            if (push(params->stack_2, passenger_id) == -1)
+                throw_error(PROCESS_NAME, "Stack Push Error");
         }
         pthread_mutex_unlock(params->mutex);
 
@@ -238,7 +229,7 @@ void *open_doors(void *_args) {
             throw_error(PROCESS_NAME, "Message Send Error");
     }
 
-    if(!handled_depart_signal) {
+    if (!handled_depart_signal) {
         struct message poison_message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
         if (message_queue_receive(msg_id, &poison_message, MSG_TYPE_FULL, 0) == IPC_ERROR)
@@ -269,7 +260,6 @@ void arrive_and_depart(struct train *this, struct params *params) {
     message.mtype = MSG_TYPE_FULL;
     if (message_queue_send(params->msg_id_sm, &message) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Message Send Error");
-
 
     pause();
 
@@ -329,19 +319,14 @@ void arrive_and_depart(struct train *this, struct params *params) {
                 // params->stack_2->top,
                 this->return_interval);
 
-    // for (int i = 0; i < params->stack_1->top; i++) {
-        // log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
-    // }
+    for (int i = 0; i < params->stack_1->top; i++) {
+        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
+    }
 
     this->passenger_count = 0;
     this->bike_count = 0;
     params->stack_1->top = 0;
     params->stack_2->top = 0;
-    // params->shared_memory_td_1[TRAIN_P_LIMIT] = 0;
-    // params->shared_memory_td_1[TRAIN_P_LIMIT + 1] = 0;
-    // params->shared_memory_td_2[TRAIN_B_LIMIT] = 0;
-    // params->shared_memory_td_2[TRAIN_B_LIMIT + 1] = 0;
-
 
     // TODO: ADD THEM TO STRUCT AND FREE THEM THEN
     free(args_1);

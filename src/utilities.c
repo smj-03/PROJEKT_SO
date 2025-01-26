@@ -16,7 +16,7 @@ int log_message(const char *_process_name, const char *_format, ...) {
             local_time->tm_min,
             local_time->tm_sec);
 
-    fprintf(stdout, "[%s%s%s]",
+    fprintf(stdout, "[%s%s%s] ",
             ANSI_COLOR_GREEN,
             _process_name,
             ANSI_COLOR_RESET);
@@ -125,10 +125,10 @@ int shared_block_alloc(const key_t key, const size_t size, const int flags) {
 
 void *shared_block_attach(const key_t key, int size) {
     const int shared_block_id = shared_block_alloc(key, size, IPC_GET);
-    if(shared_block_id == IPC_ERROR) return NULL;
+    if (shared_block_id == IPC_ERROR) return NULL;
 
     char *result = shmat(shared_block_id, NULL, 0);
-    if(result == (char *) IPC_ERROR) return NULL;
+    if (result == (char *) IPC_ERROR) return NULL;
 
     return result;
 }
@@ -139,7 +139,7 @@ int shared_block_detach(const void *block) {
 
 int shared_block_destroy(const key_t key) {
     const int shared_block_id = shared_block_alloc(key, 0, IPC_GET);
-    if(shared_block_id == IPC_ERROR) return -1;
+    if (shared_block_id == IPC_ERROR) return -1;
 
     return shmctl(shared_block_id, IPC_RMID, NULL);
 }
@@ -184,7 +184,20 @@ int wait_for_signal(const int signal) {
         return -1;
     }
 
-    if(sigprocmask(SIG_SETMASK, &old_set, NULL) == -1) return -1;
+    if (sigprocmask(SIG_SETMASK, &old_set, NULL) == -1) return -1;
 
     return sig;
+}
+
+int push(struct passenger_stack *stack, const int value) {
+    if (stack->top < TRAIN_MAX_CAPACITY)
+        stack->data[stack->top++] = value;
+    else return -1;
+    return 1;
+}
+
+int pop(struct passenger_stack *stack) {
+    if (stack->top > 0)
+        return stack->data[--stack->top];
+    return -1;
 }

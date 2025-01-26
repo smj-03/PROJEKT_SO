@@ -35,14 +35,9 @@ struct message {
     int mvalue;
 };
 
-struct passenger_stack_1 {
+struct passenger_stack {
     int top;
-    int data[TRAIN_P_LIMIT];
-};
-
-struct passenger_stack_2 {
-    int top;
-    int data[TRAIN_B_LIMIT];
+    int data[TRAIN_MAX_CAPACITY];
 };
 
 int log_message(const char *_process_name, const char *_format, ...);
@@ -84,5 +79,9 @@ int message_queue_destroy(int msg_id);
 int setup_signal_handler(int signal, void (*handler)(int));
 
 int wait_for_signal(int signal);
+
+int push(struct passenger_stack *stack, int value);
+
+int pop(struct passenger_stack *stack);
 
 #endif //UTILITIES_H
