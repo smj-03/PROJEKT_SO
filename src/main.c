@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     if (shared_block_alloc(SHM_STATION_MASTER_TRAIN_KEY, (TRAIN_NUM + 2) * sizeof(int), IPC_CREATE) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Shared Memory Allocation Error");
 
-    if (shared_block_alloc(SHM_STATION_MASTER_PLATFORM_KEY, sizeof(int), IPC_CREATE) == IPC_ERROR)
+    if (shared_block_alloc(SHM_STATION_MASTER_PASSENGER_KEY, sizeof(int), IPC_CREATE) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Shared Memory Allocation Error");
 
     const int msg_id_sm = message_queue_alloc(MSG_STATION_MASTER_KEY,IPC_CREATE);

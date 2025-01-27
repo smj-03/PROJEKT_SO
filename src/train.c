@@ -219,6 +219,9 @@ void *open_doors(void *_args) {
             throw_error(PROCESS_NAME, "Message Send Error");
     }
 
+    if (args->door_number == 0 && this->passenger_count == TRAIN_MAX_CAPACITY)
+        log_message(PROCESS_NAME, "[%d][INFO] Train is full! The doors have closed!\n", this->id);
+
     if (!handled_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY) {
         struct message poison_message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
@@ -293,27 +296,30 @@ void arrive_and_depart(struct train *this, struct params *params) {
     if (kill(conductor_pid, SIGKILL) == IPC_ERROR) throw_error(PROCESS_NAME, "Sigkill Error");
     if (waitpid(conductor_pid, NULL, 0) == -1) throw_error(PROCESS_NAME, "Waitpid Error");
 
-    sem_post(params->sem_id_sm, 2); // sem 3 departure signal
-
     // TODO: CLEAN PASSENGERS, STACK ETC.
+    for (int i = 0; i < params->stack_1->top; i++) {
+        kill(params->stack_1->data[i], SIGTERM);
+        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
+    }
+    for (int i = 0; i < params->stack_2->top; i++) {
+        kill(params->stack_2->data[i], SIGTERM);
+        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
+    }
 
     log_message(PROCESS_NAME,
                 "[%d][INFO] Passengers taken: %d, Passengers with bikes taken: %d, Returns in %d seconds\n",
                 this->id,
-                // this->passenger_count,
-                // this->bike_count,
                 params->stack_1->top,
                 params->stack_2->top,
                 this->return_interval);
 
-    for (int i = 0; i < params->stack_1->top; i++) {
-        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
-    }
 
     this->passenger_count = 0;
     this->bike_count = 0;
     params->stack_1->top = 0;
     params->stack_2->top = 0;
+
+    sem_post(params->sem_id_sm, 2); // sem 3 departure signal
 
     // TODO: ADD THEM TO STRUCT AND FREE THEM THEN
     free(args_1);

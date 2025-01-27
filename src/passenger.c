@@ -9,8 +9,7 @@
 struct passenger {
     int id;
     _Bool has_bike;
-    _Bool is_boarded;
-};
+} *this;
 
 struct params {
     int sem_id_sm;
@@ -19,9 +18,11 @@ struct params {
     int *shared_memory_td_1;
     int *shared_memory_td_2;
     int *shared_memory_counter;
-};
+} *params;
 
 void handle_sigusr1(int);
+
+void handle_sigterm(int);
 
 void init_params(struct params *);
 
@@ -31,17 +32,19 @@ void board_train(struct passenger *, struct params *);
 
 int main() {
     setup_signal_handler(SIGUSR1, handle_sigusr1);
+    setup_signal_handler(SIGTERM, handle_sigterm);
 
-    struct params *params = malloc(sizeof(struct params));
+    params = malloc(sizeof(struct params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
 
-
-    struct passenger *this = malloc(sizeof(struct passenger));
+    this = malloc(sizeof(struct passenger));
     if (this == NULL) throw_error(PROCESS_NAME, "Passenger Error");
 
     init_params(params);
 
     init_passenger(this);
+
+    log_message(PROCESS_NAME, "[ARRIVAL] ID: %d BIKE: %d\n", this->id, this->has_bike);
 
     board_train(this, params);
 
@@ -50,6 +53,8 @@ int main() {
         log_message(PROCESS_NAME, "[EXIT] ID: %d\n", getpid());
         board_train(this, params);
     }
+
+    // TODO: SIGTERM EXIT + CLEANUP
 
     if (VERBOSE_LOGS)
         log_message(
@@ -70,7 +75,17 @@ int main() {
 }
 
 void handle_sigusr1(int sig) {
-    write(STDOUT_FILENO, "Received SIGUSRX, continuing...\n", 32);
+    // write(STDOUT_FILENO, "Received SIGUSR1, continuing...\n", 32);
+}
+
+void handle_sigterm(int) {
+    params->shared_memory_counter[0]--;
+    shared_block_detach(params->shared_memory_td_1);
+    shared_block_detach(params->shared_memory_td_2);
+    shared_block_detach(params->shared_memory_counter);
+    free(params);
+    free(this);
+    exit(0);
 }
 
 void init_params(struct params *params) {
@@ -94,15 +109,13 @@ void init_params(struct params *params) {
     if (msg_id_td_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_td_2 = msg_id_td_2;
 
-    int *shared_memory_counter = shared_block_attach(SHM_STATION_MASTER_PLATFORM_KEY, sizeof(int));
+    int *shared_memory_counter = shared_block_attach(SHM_STATION_MASTER_PASSENGER_KEY, sizeof(int));
     if (shared_memory_counter == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    shared_memory_counter[0]++;
     params->shared_memory_counter = shared_memory_counter;
 }
 
 void init_passenger(struct passenger *this) {
     this->id = getpid();
-    this->is_boarded = 0;
 
     srand(getpid());
     if (get_random_number(0, PASSENGER_BIKE_PROB - 1))
@@ -112,12 +125,16 @@ void init_passenger(struct passenger *this) {
 }
 
 void board_train(struct passenger *this, struct params *params) {
+    // TODO: SEMAPHORE
+    params->shared_memory_counter[0]++;
+
     sem_wait_no_op(params->sem_id_sm, 0, 0);
 
     struct message message;
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
-    if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR) throw_error(
-        PROCESS_NAME, "Message Receive Error");
+    if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR)
+        throw_error(
+            PROCESS_NAME, "Message Receive Error");
 
     int *shared_memory = this->has_bike ? params->shared_memory_td_2 : params->shared_memory_td_1;
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
@@ -125,14 +142,6 @@ void board_train(struct passenger *this, struct params *params) {
     const int save = shared_memory[limit + 1];
     shared_memory[save] = this->id;
     shared_memory[limit + 1] = (save + 1) % limit;
-
-    log_message(PROCESS_NAME,
-                "[BOARDING]   ID: %-8d BIKE: %-3d\n",
-                this->id,
-                this->has_bike);
-
-    this->is_boarded = 1;
-    params->shared_memory_counter[0]--;
 
     message.mtype = MSG_TYPE_FULL;
     if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");

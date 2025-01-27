@@ -58,7 +58,9 @@ int main(int argc, char *argv[]) {
     while (!platform_closed || passenger_counter[0]) {
         log_message(PROCESS_NAME, "[INFO] Passengers on the platform %d\n", params->shared_memory_counter[0]);
         handle_train(params);
+        // if(!platform_closed) kill(platform_id, SIGUSR1);
     }
+    log_message(PROCESS_NAME, "[INFO] Passengers on the platform %d\n", params->shared_memory_counter[0]);
 
     kill_all_trains(train_ids);
     sem_post(params->sem_id_p, 0);
@@ -125,7 +127,7 @@ void init_params(struct params *params) {
     if (msg_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_sm = msg_id_sm;
 
-    int *shared_memory_counter = shared_block_attach(SHM_STATION_MASTER_PLATFORM_KEY, sizeof(int));
+    int *shared_memory_counter = shared_block_attach(SHM_STATION_MASTER_PASSENGER_KEY, sizeof(int));
     if (shared_memory_counter == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_counter = shared_memory_counter;
 
