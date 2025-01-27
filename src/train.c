@@ -8,6 +8,7 @@
 
 struct params {
     int sem_id_ta;
+    int sem_id_td;
     int sem_id_c;
     int msg_id_td_1;
     int msg_id_td_2;
@@ -91,6 +92,10 @@ void init_params(struct params *params) {
     const int sem_id_ta = sem_alloc(SEM_TRAIN_ARRIVAL_KEY, 1, IPC_GET);
     if (sem_id_ta == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_ta = sem_id_ta;
+
+    const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_GET);
+    if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
+    params->sem_id_td = sem_id_td;
 
     const int sem_id_c = sem_alloc(SEM_CONDUCTOR_KEY, 2, IPC_GET);
     if (sem_id_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
@@ -192,12 +197,16 @@ void *open_doors(void *_args) {
         int *shared_memory = args->door_number ? params->shared_memory_td_2 : params->shared_memory_td_1;
         const int limit = args->door_number ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
 
+        // CRITICAL SECTION - SHARED MEMORY
+        sem_wait(params->sem_id_td, args->door_number, 0);
+
         const int read = shared_memory[limit];
         const int passenger_id = shared_memory[read];
 
         pthread_mutex_lock(params->mutex);
         shared_memory[limit] = (shared_memory[limit] + 1) % limit;
 
+        // TODO: ADD SEMAPHORE?
         this->passenger_count++;
         if (args->door_number == 0) {
             if (push(params->stack_1, passenger_id) == -1) throw_error(PROCESS_NAME, "Stack Push Error");
@@ -206,6 +215,7 @@ void *open_doors(void *_args) {
             if (push(params->stack_2, passenger_id) == -1) throw_error(PROCESS_NAME, "Stack Push Error");
         }
         pthread_mutex_unlock(params->mutex);
+        sem_post(params->sem_id_td, args->door_number);
 
         sleep(PASSENGER_BOARDING_TIME);
         log_message(PROCESS_NAME,
@@ -219,8 +229,8 @@ void *open_doors(void *_args) {
             throw_error(PROCESS_NAME, "Message Send Error");
     }
 
-    if (args->door_number == 0 && this->passenger_count == TRAIN_MAX_CAPACITY)
-        log_message(PROCESS_NAME, "[%d][INFO] Train is full! The doors have closed!\n", this->id);
+    if (this->passenger_count == TRAIN_MAX_CAPACITY)
+        log_message(PROCESS_NAME, "[%d][INFO] Train is full! The doors %d have closed!\n", this->id, args->door_number + 1);
 
     if (!handled_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY) {
         struct message poison_message;
@@ -303,7 +313,7 @@ void arrive_and_depart(struct train *this, struct params *params) {
     }
     for (int i = 0; i < params->stack_2->top; i++) {
         kill(params->stack_2->data[i], SIGTERM);
-        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
+        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_2->data[i]);
     }
 
     log_message(PROCESS_NAME,
