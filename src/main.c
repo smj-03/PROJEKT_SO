@@ -4,7 +4,6 @@
 #define PROCESS_NAME "MAIN"
 
 struct params {
-    int sem_id_ta;
     int sem_id_td;
     int sem_id_sm;
     int sem_id_c;
@@ -35,9 +34,6 @@ int main(int argc, char *argv[]) {
 
     params = malloc(sizeof(struct params));
     init_params();
-
-    printf("Semaphore IDs:\nsem_id_ta: %d\nsem_id_td: %d\nsem_id_sm: %d\nsem_id_c: %d\nsem_id_p: %d\nsem_id_pc: %d\n",
-           params->sem_id_ta, params->sem_id_td, params->sem_id_sm, params->sem_id_c, params->sem_id_p, params->sem_id_pc);
 
     char *station_master_args[TRAIN_NUM + 3];
     for (int i = 0; i < TRAIN_NUM + 3; i++)
@@ -108,11 +104,6 @@ int main(int argc, char *argv[]) {
 
 void init_params() {
     // TRAIN IPC INIT
-    const int sem_id_ta = sem_alloc(SEM_TRAIN_ARRIVAL_KEY, 1, IPC_CREATE);
-    if (sem_id_ta == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
-    if (sem_init(sem_id_ta, 0, 0) == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Control Error");
-    params->sem_id_ta = sem_id_ta;
-
     const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_CREATE);
     if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_td = sem_id_td;
@@ -209,7 +200,6 @@ void init_params() {
 
 void clear_params() {
     sem_destroy(params->sem_id_td, SEM_TRAIN_DOOR_NUM);
-    sem_destroy(params->sem_id_ta, 1);
     sem_destroy(params->sem_id_sm, 3);
     sem_destroy(params->sem_id_c, 2);
     sem_destroy(params->sem_id_p, 1);

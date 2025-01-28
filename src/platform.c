@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         const int interval = get_random_number(PASSENGER_MIN_INTERVAL, PASSENGER_MAX_INTERVAL);
 
         int concurrent_passengers = 1;
-        int solo_passenger = get_random_number(0,PASSENGER_SOLO_PROB);
+        const int solo_passenger = get_random_number(0,PASSENGER_SOLO_PROB);
         if (!solo_passenger) concurrent_passengers = get_random_number(2, PASSENGER_MAX_CONCURRENCY);
 
         if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[SPAWN] %d PASSENGER(S)\n", concurrent_passengers);
@@ -44,14 +44,12 @@ int main(int argc, char *argv[]) {
 
     const int sem_id = sem_alloc(SEM_PLATFORM_KEY, 1, IPC_GET);
     if (sem_id == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
-    if (sem_wait(sem_id, 0, 0) == IPC_ERROR)
-        throw_error(PROCESS_NAME, "Semaphore Wait Error");
+
+    if (sem_wait(sem_id, 0, 0) == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Wait Error");
 
     if (pthread_join(clean_thread_id, NULL)) throw_error(PROCESS_NAME, "Thread Join");
 
     reap_passengers();
-
-    sem_destroy(sem_id, 1);
     return 0;
 }
 

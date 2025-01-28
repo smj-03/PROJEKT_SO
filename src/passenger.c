@@ -61,15 +61,6 @@ int main() {
         log_message(PROCESS_NAME, "[EXIT] ID: %d\n", getpid());
         board_train(this, params);
     }
-
-    // TODO: SIGTERM EXIT + CLEANUP
-
-    shared_block_detach(params->shared_memory_td_1);
-    shared_block_detach(params->shared_memory_td_2);
-    free(params);
-    free(this);
-
-    return 0;
 }
 
 void handle_sigusr1(int sig) {
@@ -144,7 +135,6 @@ void board_train() {
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
     const int save = shared_memory[limit + 1];
 
-    // TODO: CRITICAL SECTION ADD SEMAPHORE
     sem_wait(params->sem_id_td, this->has_bike, 0);
     shared_memory[save] = this->id;
     shared_memory[limit + 1] = (save + 1) % limit;

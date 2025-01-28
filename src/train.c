@@ -7,7 +7,6 @@
 #define PROCESS_NAME "TRAIN"
 
 struct params {
-    int sem_id_ta;
     int sem_id_td;
     int sem_id_c;
     int msg_id_td_1;
@@ -21,14 +20,14 @@ struct params {
     int sem_id_sm;
     int msg_id_sm;
     int *shared_memory_sm;
-};
+} *params;
 
 struct train {
     int id;
     int passenger_count;
     int bike_count;
     int return_interval;
-};
+} *this;
 
 struct thread_args {
     int door_number;
@@ -44,16 +43,15 @@ volatile int platform_open = 1;
 
 void handle_sigcont(int);
 
-void init_params(struct params *);
+void init_params();
 
-void init_train(struct train *);
+void init_train();
 
 int init_conductor();
 
 void *open_doors(void *);
 
-// TODO: CHANGE FOR SIGNAL HANDLER
-void arrive_and_depart(struct train *, struct params *);
+void arrive_and_depart();
 
 int main(int argc, char *argv[]) {
     if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
@@ -61,13 +59,13 @@ int main(int argc, char *argv[]) {
     if (setup_signal_handler(SIGCONT, handle_sigcont) == IPC_ERROR)
         throw_error(PROCESS_NAME, "SIGCONT Handler Error");
 
-    struct params *params = malloc(sizeof(struct params));
+    params = malloc(sizeof(struct params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Error");
 
-    struct train *this = malloc(sizeof(struct train));
+    this = malloc(sizeof(struct train));
     if (this == NULL) throw_error(PROCESS_NAME, "Train Error");
 
-    init_params(params);
+    init_params();
 
     init_train(this);
 
@@ -85,13 +83,9 @@ void handle_sigcont(int sig) {
     has_arrived = 1;
 }
 
-void init_params(struct params *params) {
+void init_params() {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     params->mutex = &mutex;
-
-    const int sem_id_ta = sem_alloc(SEM_TRAIN_ARRIVAL_KEY, 1, IPC_GET);
-    if (sem_id_ta == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
-    params->sem_id_ta = sem_id_ta;
 
     const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_GET);
     if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
@@ -140,13 +134,13 @@ void init_params(struct params *params) {
     params->msg_id_sm = msg_id_sm;
 }
 
-void init_train(struct train *this) {
+void init_train() {
     this->id = getpid();
     this->passenger_count = 0;
     this->bike_count = 0;
 
     srand(getpid());
-    int return_interval = get_random_number(TRAIN_MIN_RETURN_INTERVAL, TRAIN_MAX_RETURN_INTERVAL);
+    const int return_interval = get_random_number(TRAIN_MIN_RETURN_INTERVAL, TRAIN_MAX_RETURN_INTERVAL);
     this->return_interval = return_interval;
 }
 
@@ -237,7 +231,7 @@ void *open_doors(void *_args) {
     }
 }
 
-void arrive_and_depart(struct train *this, struct params *params) {
+void arrive_and_depart() {
     has_arrived = 0;
     received_depart_signal = 0;
 
@@ -322,7 +316,6 @@ void arrive_and_depart(struct train *this, struct params *params) {
 
     sem_post(params->sem_id_sm, 2); // sem 3 departure signal
 
-    // TODO: ADD THEM TO STRUCT AND FREE THEM THEN
     free(args_1);
     free(args_2);
 
