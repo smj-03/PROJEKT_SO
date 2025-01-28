@@ -137,18 +137,25 @@ void board_train() {
     if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Message Receive Error");
 
+    log_warning(PROCESS_NAME, "Message received %d\n", this->id);
+
+    // Wsiadanie
+    // FIXME: Czasami się nie zapisuje poprawnie.
+    sem_wait(params->sem_id_td, this->has_bike, 0);
+
     int *shared_memory = this->has_bike ? params->shared_memory_td_2 : params->shared_memory_td_1;
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
     const int save = shared_memory[limit + 1];
-
-    // Wsiadanie
-    sem_wait(params->sem_id_td, this->has_bike, 0);
     shared_memory[save] = this->id;
     shared_memory[limit + 1] = (save + 1) % limit;
+
     sem_post(params->sem_id_td, this->has_bike);
+
+    shared_block_detach(shared_memory);
 
     message.mtype = MSG_TYPE_FULL;
     if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
+
 }
 
 /**

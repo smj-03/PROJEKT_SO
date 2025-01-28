@@ -54,7 +54,7 @@ void *open_doors(void *);
 void arrive_and_depart();
 
 int main(int argc, char *argv[]) {
-    if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
+    if (VERBOSE_LOGS) log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
     if (setup_signal_handler(SIGCONT, handle_sigcont) == IPC_ERROR)
         throw_error(PROCESS_NAME, "SIGCONT Handler Error");
@@ -166,6 +166,15 @@ void *open_doors(void *_args) {
         pthread_mutex_unlock(params->mutex);
         sem_post(params->sem_id_td, args->door_number);
 
+        if (args->door_number == 0) {
+            log_message(PROCESS_NAME, "[DOOR 1] %d %d %d %d %d %d %d %d\n",
+                        shared_memory[0], shared_memory[1], shared_memory[2], shared_memory[3], shared_memory[4],
+                        shared_memory[5], shared_memory[6], shared_memory[7]);
+        } else {
+            log_message(PROCESS_NAME, "[DOOR 2] %d %d %d %d\n",
+                        shared_memory[0], shared_memory[1], shared_memory[2], shared_memory[3]);
+        }
+
         log_message(PROCESS_NAME,
                     "[%d][DOOR %d] Welcome Passenger %d!\n",
                     this->id,
@@ -259,11 +268,11 @@ void arrive_and_depart() {
     // Kończenie procesów pasażerów którzy odjeżdzają.
     for (int i = 0; i < params->stack_1->top; i++) {
         kill(params->stack_1->data[i], SIGTERM);
-        // log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_1->data[i]);
+        log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_1->data[i]);
     }
     for (int i = 0; i < params->stack_2->top; i++) {
         kill(params->stack_2->data[i], SIGTERM);
-        // log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_2->data[i]);
+        log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_2->data[i]);
     }
 
     log_message(PROCESS_NAME,
@@ -338,4 +347,3 @@ void init_params() {
     if (msg_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
     params->msg_id_sm = msg_id_sm;
 }
-
