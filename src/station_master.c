@@ -36,8 +36,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < TRAIN_NUM; i++)
         train_ids[i] = atoi(argv[i + 2]);
 
-    log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
-    log_message(PROCESS_NAME, "[INIT] PLATFORM ID: %d\n", platform_id);
+    if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
     struct params *params = malloc(sizeof(struct params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Error");

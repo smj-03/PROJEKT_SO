@@ -56,7 +56,7 @@ void *open_doors(void *);
 void arrive_and_depart(struct train *, struct params *);
 
 int main(int argc, char *argv[]) {
-    log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
+    if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
     if (setup_signal_handler(SIGCONT, handle_sigcont) == IPC_ERROR)
         throw_error(PROCESS_NAME, "SIGCONT Handler Error");
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 }
 
 void handle_sigcont(int sig) {
-    write(STDOUT_FILENO, "Received SIGCONT, continuing...\n", 32);
+    // write(STDOUT_FILENO, "Received SIGCONT, continuing...\n", 32);
     has_arrived = 1;
 }
 
@@ -188,7 +188,7 @@ void *open_doors(void *_args) {
 
         if (received_depart_signal) {
             handled_depart_signal = 1;
-            continue;
+            break;
         }
 
         int *shared_memory = args->door_number ? params->shared_memory_td_2 : params->shared_memory_td_1;
@@ -199,9 +199,9 @@ void *open_doors(void *_args) {
 
         const int read = shared_memory[limit];
         const int passenger_id = shared_memory[read];
+        shared_memory[limit] = (shared_memory[limit] + 1) % limit;
 
         pthread_mutex_lock(params->mutex);
-        shared_memory[limit] = (shared_memory[limit] + 1) % limit;
 
         // TODO: ADD SEMAPHORE?
         this->passenger_count++;
@@ -222,12 +222,11 @@ void *open_doors(void *_args) {
                     passenger_id);
 
         message.mtype = MSG_TYPE_EMPTY;
-        if (message_queue_send(msg_id, &message) == IPC_ERROR)
-            throw_error(PROCESS_NAME, "Message Send Error");
+        if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
     }
 
     if (this->passenger_count == TRAIN_MAX_CAPACITY)
-        log_message(PROCESS_NAME, "[%d][INFO] Train is full! The doors %d have closed!\n", this->id, args->door_number + 1);
+        log_message(PROCESS_NAME, "[%d][INFO] Train is full! Doors %d have closed!\n", this->id, args->door_number + 1);
 
     if (!handled_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY) {
         struct message poison_message;
@@ -259,7 +258,6 @@ void arrive_and_depart(struct train *this, struct params *params) {
     pause();
 
     const int conductor_pid = init_conductor();
-    log_message(PROCESS_NAME, "[INFO] Conductor init %d\n", conductor_pid);
 
     // 1 BAGGAGE 2 BIKE
     pthread_t id_thread_door_1, id_thread_door_2;
@@ -302,11 +300,11 @@ void arrive_and_depart(struct train *this, struct params *params) {
     // TODO: CLEAN PASSENGERS, STACK ETC.
     for (int i = 0; i < params->stack_1->top; i++) {
         kill(params->stack_1->data[i], SIGTERM);
-        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_1->data[i]);
+        log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_1->data[i]);
     }
     for (int i = 0; i < params->stack_2->top; i++) {
         kill(params->stack_2->data[i], SIGTERM);
-        log_message(PROCESS_NAME, "[INFO] Passenger %d\n", params->stack_2->data[i]);
+        log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_2->data[i]);
     }
 
     log_message(PROCESS_NAME,

@@ -12,6 +12,7 @@ struct passenger {
 } *this;
 
 struct params {
+    int sem_id_pc;
     int sem_id_sm;
     int sem_id_td;
     int msg_id_td_1;
@@ -25,11 +26,15 @@ void handle_sigusr1(int);
 
 void handle_sigterm(int);
 
-void init_params(struct params *);
+void init_params();
 
-void init_passenger(struct passenger *);
+void init_passenger();
 
-void board_train(struct passenger *, struct params *);
+void board_train();
+
+void increase_counter();
+
+void decrease_counter();
 
 int main() {
     setup_signal_handler(SIGUSR1, handle_sigusr1);
@@ -41,13 +46,15 @@ int main() {
     this = malloc(sizeof(struct passenger));
     if (this == NULL) throw_error(PROCESS_NAME, "Passenger Error");
 
-    init_params(params);
+    init_params();
 
-    init_passenger(this);
+    init_passenger();
+
+    increase_counter();
 
     log_message(PROCESS_NAME, "[ARRIVAL] ID: %d BIKE: %d\n", this->id, this->has_bike);
 
-    board_train(this, params);
+    board_train();
 
     while (1) {
         pause();
@@ -56,16 +63,6 @@ int main() {
     }
 
     // TODO: SIGTERM EXIT + CLEANUP
-
-    if (VERBOSE_LOGS)
-        log_message(
-            PROCESS_NAME,
-            "[INIT]   ID: %-8d BIKE: %-3d MSG_IDs: %d %d\n",
-            this->id,
-            this->has_bike,
-            params->msg_id_td_1,
-            params->msg_id_td_2
-        );
 
     shared_block_detach(params->shared_memory_td_1);
     shared_block_detach(params->shared_memory_td_2);
@@ -80,22 +77,21 @@ void handle_sigusr1(int sig) {
 }
 
 void handle_sigterm(int) {
-    params->shared_memory_counter[0]--;
-    printf("----------------------\n");
+    decrease_counter();
     shared_block_detach(params->shared_memory_td_1);
     shared_block_detach(params->shared_memory_td_2);
     shared_block_detach(params->shared_memory_counter);
     free(params);
     free(this);
-    exit(0);
+    _exit(0);
 }
 
-void init_params(struct params *params) {
+void init_params() {
     const int sem_id_sm = sem_alloc(SEM_STATION_MASTER_KEY, 1, IPC_GET);
     if (sem_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_sm = sem_id_sm;
 
-    const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_GET);
+    const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM * 2, IPC_GET);
     if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_td = sem_id_td;
 
@@ -118,11 +114,13 @@ void init_params(struct params *params) {
     int *shared_memory_counter = shared_block_attach(SHM_STATION_MASTER_PASSENGER_KEY, sizeof(int));
     if (shared_memory_counter == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_counter = shared_memory_counter;
-    params->shared_memory_counter[0]++;
-    printf("++++++++++++++++++++\n");
+
+    const int sem_id_pc = sem_alloc(SEM_PASSENGER_KEY, 1, IPC_GET);
+    if (sem_id_pc == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
+    params->sem_id_pc = sem_id_pc;
 }
 
-void init_passenger(struct passenger *this) {
+void init_passenger() {
     this->id = getpid();
 
     srand(getpid());
@@ -132,25 +130,38 @@ void init_passenger(struct passenger *this) {
         this->has_bike = 1;
 }
 
-void board_train(struct passenger *this, struct params *params) {
+void board_train() {
     sem_wait_no_op(params->sem_id_sm, 0, 0);
 
     struct message message;
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
     if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR)
-        throw_error(
-            PROCESS_NAME, "Message Receive Error");
+        throw_error(PROCESS_NAME, "Message Receive Error");
+
+    log_message(PROCESS_NAME, "Message received %d\n", this->id);
 
     int *shared_memory = this->has_bike ? params->shared_memory_td_2 : params->shared_memory_td_1;
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
+    const int save = shared_memory[limit + 1];
 
     // TODO: CRITICAL SECTION ADD SEMAPHORE
     sem_wait(params->sem_id_td, this->has_bike, 0);
-    const int save = shared_memory[limit + 1];
     shared_memory[save] = this->id;
     shared_memory[limit + 1] = (save + 1) % limit;
     sem_post(params->sem_id_td, this->has_bike);
 
     message.mtype = MSG_TYPE_FULL;
     if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
+}
+
+void increase_counter() {
+    sem_wait(params->sem_id_pc, 0, 0);
+    params->shared_memory_counter[0]++;
+    sem_post(params->sem_id_pc, 0);
+}
+
+void decrease_counter() {
+    sem_wait(params->sem_id_pc, 0, 0);
+    params->shared_memory_counter[0]--;
+    sem_post(params->sem_id_pc, 0);
 }

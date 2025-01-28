@@ -17,7 +17,7 @@ void init_params(struct params *);
 void kick_passengers(const struct params *);
 
 int main(int argc, char *argv[]) {
-    log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
+    if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
     struct params *params = malloc(sizeof(params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Init Error");

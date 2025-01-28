@@ -4,7 +4,7 @@
 #define PROCESS_NAME "MAIN"
 
 int main(int argc, char *argv[]) {
-    log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
+    if(VERBOSE_LOGS) log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
 
     // TRAIN IPC INIT
     const int sem_id_ta = sem_alloc(SEM_TRAIN_ARRIVAL_KEY, 1, IPC_CREATE);
@@ -74,6 +74,12 @@ int main(int argc, char *argv[]) {
     const int sem_id_p = sem_alloc(SEM_PLATFORM_KEY, 1, IPC_CREATE);
     if (sem_id_p == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
     if (sem_init(sem_id_p, 0, 0) == IPC_ERROR)
+        throw_error(PROCESS_NAME, "Semaphore Control Error");
+
+    // PASSENGER IPC INIT
+    const int sem_id_pc = sem_alloc(SEM_PASSENGER_KEY, 1, IPC_CREATE);
+    if (sem_id_pc == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
+    if (sem_init(sem_id_pc, 0, 1) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Semaphore Control Error");
 
     struct message train_message;
