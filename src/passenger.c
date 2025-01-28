@@ -91,9 +91,13 @@ void init_params() {
     if (sem_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_sm = sem_id_sm;
 
-    const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM * 2, IPC_GET);
+    const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_GET);
     if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
     params->sem_id_td = sem_id_td;
+
+    const int sem_id_pc = sem_alloc(SEM_PASSENGER_KEY, 1, IPC_GET);
+    if (sem_id_pc == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
+    params->sem_id_pc = sem_id_pc;
 
     int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
     if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
@@ -114,10 +118,6 @@ void init_params() {
     int *shared_memory_counter = shared_block_attach(SHM_STATION_MASTER_PASSENGER_KEY, sizeof(int));
     if (shared_memory_counter == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
     params->shared_memory_counter = shared_memory_counter;
-
-    const int sem_id_pc = sem_alloc(SEM_PASSENGER_KEY, 1, IPC_GET);
-    if (sem_id_pc == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
-    params->sem_id_pc = sem_id_pc;
 }
 
 void init_passenger() {

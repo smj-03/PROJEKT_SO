@@ -10,16 +10,16 @@ struct params {
     int sem_id_c;
     struct passenger_stack *stack_1;
     struct passenger_stack *stack_2;
-};
+} *params;
 
-void init_params(struct params *);
+void init_params();
 
-void kick_passengers(const struct params *);
+void kick_passengers();
 
 int main(int argc, char *argv[]) {
     if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
-    struct params *params = malloc(sizeof(params));
+    params = malloc(sizeof(params));
     if (params == NULL) throw_error(PROCESS_NAME, "Params Init Error");
 
     init_params(params);
@@ -32,12 +32,14 @@ int main(int argc, char *argv[]) {
     sem_post(params->sem_id_c, 1);
 
     free(params);
+    shared_block_detach(params->stack_1);
+    shared_block_detach(params->stack_2);
     pause();
 
     return 0;
 }
 
-void init_params(struct params *params) {
+void init_params() {
     const int sem_id_c = sem_alloc(SEM_CONDUCTOR_KEY, 2, IPC_GET);
     if (sem_id_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
     params->sem_id_c = sem_id_c;
@@ -53,7 +55,7 @@ void init_params(struct params *params) {
     params->stack_2 = stack_2;
 }
 
-void kick_passengers(const struct params *params) {
+void kick_passengers() {
     const int bikes_to_exit = params->stack_2->top - TRAIN_B_LIMIT;
     if (params->stack_2->top > TRAIN_B_LIMIT)
         for (int i = 0; i < bikes_to_exit; i++) {
