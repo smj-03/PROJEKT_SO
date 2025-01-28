@@ -59,7 +59,6 @@ int main(int argc, char *argv[]) {
     while (!platform_closed || passenger_counter[0]) {
         log_message(PROCESS_NAME, "[INFO] Passengers on the platform: %d\n", params->shared_memory_counter[0]);
         handle_train(params);
-        // if(!platform_closed) kill(platform_id, SIGUSR1);
     }
     log_message(PROCESS_NAME, "[INFO] Passengers on the platform: %d\n", params->shared_memory_counter[0]);
 

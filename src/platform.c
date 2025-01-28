@@ -8,8 +8,6 @@
 
 volatile int platform_open = 1;
 
-void handle_sigusr1(int sig);
-
 void handle_sigusr2(int);
 
 void reap_passengers();

@@ -83,6 +83,7 @@ void handle_sigterm(int) {
     shared_block_detach(params->shared_memory_counter);
     free(params);
     free(this);
+    exit(0);
 }
 
 void init_params() {
