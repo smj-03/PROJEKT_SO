@@ -259,11 +259,11 @@ void arrive_and_depart() {
     // Kończenie procesów pasażerów którzy odjeżdzają.
     for (int i = 0; i < params->stack_1->top; i++) {
         kill(params->stack_1->data[i], SIGTERM);
-        log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_1->data[i]);
+        // log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_1->data[i]);
     }
     for (int i = 0; i < params->stack_2->top; i++) {
         kill(params->stack_2->data[i], SIGTERM);
-        log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_2->data[i]);
+        // log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_2->data[i]);
     }
 
     log_message(PROCESS_NAME,

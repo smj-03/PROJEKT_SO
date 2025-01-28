@@ -30,6 +30,7 @@ void handle_sigint(int sig);
 
 int main(int argc, char *argv[]) {
     setup_signal_handler(SIGINT, handle_sigint);
+    setup_signal_handler(SIGTERM, handle_sigint);
     if (VERBOSE_LOGS) log_message(PROCESS_NAME, "MAIN PID: %d\n", getpid());
 
     params = malloc(sizeof(struct params));
