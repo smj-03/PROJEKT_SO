@@ -137,7 +137,7 @@ void board_train() {
     if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Message Receive Error");
 
-    log_warning(PROCESS_NAME, "Message received %d\n", this->id);
+    // log_warning(PROCESS_NAME, "Message received %d\n", this->id);
 
     // Wsiadanie
     // FIXME: Czasami się nie zapisuje poprawnie.

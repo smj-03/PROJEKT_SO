@@ -166,14 +166,14 @@ void *open_doors(void *_args) {
         pthread_mutex_unlock(params->mutex);
         sem_post(params->sem_id_td, args->door_number);
 
-        if (args->door_number == 0) {
-            log_message(PROCESS_NAME, "[DOOR 1] %d %d %d %d %d %d %d %d\n",
-                        shared_memory[0], shared_memory[1], shared_memory[2], shared_memory[3], shared_memory[4],
-                        shared_memory[5], shared_memory[6], shared_memory[7]);
-        } else {
-            log_message(PROCESS_NAME, "[DOOR 2] %d %d %d %d\n",
-                        shared_memory[0], shared_memory[1], shared_memory[2], shared_memory[3]);
-        }
+        // if (args->door_number == 0) {
+        //     log_message(PROCESS_NAME, "[DOOR 1] %d %d %d %d %d %d %d %d\n",
+        //                 shared_memory[0], shared_memory[1], shared_memory[2], shared_memory[3], shared_memory[4],
+        //                 shared_memory[5], shared_memory[6], shared_memory[7]);
+        // } else {
+        //     log_message(PROCESS_NAME, "[DOOR 2] %d %d %d %d\n",
+        //                 shared_memory[0], shared_memory[1], shared_memory[2], shared_memory[3]);
+        // }
 
         log_message(PROCESS_NAME,
                     "[%d][DOOR %d] Welcome Passenger %d!\n",
