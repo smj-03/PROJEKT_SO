@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
     params = malloc(sizeof(struct params));
     init_params();
 
+    // Uruchomienie procesów pociągów, peronu oraz zawiadowcy stacji.
     char *station_master_args[TRAIN_NUM + 3];
     for (int i = 0; i < TRAIN_NUM + 3; i++)
         station_master_args[i] = malloc(15);
@@ -155,7 +156,6 @@ void init_params() {
             throw_error(PROCESS_NAME, "Semaphore Control Error");
     sem_post(sem_id_sm, 0);
 
-    // Train Message Queue
     int const shm_id_train =
             shared_block_alloc(SHM_STATION_MASTER_TRAIN_KEY, (TRAIN_NUM + 2) * sizeof(int), IPC_CREATE);
     if (shm_id_train == IPC_ERROR)throw_error(PROCESS_NAME, "Shared Memory Allocation Error");

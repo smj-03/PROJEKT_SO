@@ -69,7 +69,6 @@ int main(int argc, char *argv[]) {
 
     init_train(this);
 
-    // TODO: CHANGE KILL FOR FLAG CHANGE / SIGKILL OVERRIDE
     while (1) arrive_and_depart(this, params);
 
     free(this);
@@ -126,13 +125,16 @@ void *open_doors(void *_args) {
 
     int handled_depart_signal = 0;
 
+    // Drzwi są otwarte o ile pociąg przyjechał, nie otrzymał sygnały o odjeździe i nie jest pełny.
     while (has_arrived && !received_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY) {
         struct message message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
 
+        // Pobieranie pasażera z kolejki komunikatów.
         if (message_queue_receive(msg_id, &message, MSG_TYPE_FULL, 0) == IPC_ERROR)
             throw_error(PROCESS_NAME, "Message Receive Error");
 
+        // Obsułga sygnału o odjeździe jeśli drzwi były na etapie message_queue_receive.
         if (received_depart_signal) {
             handled_depart_signal = 1;
             break;
@@ -144,10 +146,12 @@ void *open_doors(void *_args) {
         // Sekcja krtytyczna
         sem_wait(params->sem_id_td, args->door_number, 0);
 
+        // Czytanie ID pasażera z pamięci współdzielonej.
         const int read = shared_memory[limit];
         const int passenger_id = shared_memory[read];
         shared_memory[limit] = (shared_memory[limit] + 1) % limit;
 
+        // Oczekiwanie na wsiadanie pasażera.
         sleep(PASSENGER_BOARDING_TIME);
 
         pthread_mutex_lock(params->mutex);
@@ -175,6 +179,7 @@ void *open_doors(void *_args) {
     if (this->passenger_count == TRAIN_MAX_CAPACITY)
         log_warning(PROCESS_NAME, "[%d][INFO] Train is full! Doors %d have closed!\n", this->id, args->door_number + 1);
 
+    // Obsługa sygnału o odjeździe jeśli drzwi nie były na etapie message_queue_receive.
     if (!handled_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY) {
         struct message poison_message;
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
@@ -194,6 +199,7 @@ void arrive_and_depart() {
 
     int *shared_memory = params->shared_memory_sm;
 
+    // Zapisywanie ID pociągu do kolejki pociągów.
     const int save = shared_memory[TRAIN_NUM + 1];
     shared_memory[save] = getpid();
     shared_memory[TRAIN_NUM + 1] = (save + 1) % TRAIN_NUM;
@@ -202,8 +208,10 @@ void arrive_and_depart() {
     if (message_queue_send(params->msg_id_sm, &message) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Message Send Error");
 
+    // Czekanie na sygnał do przyjazdu.
     pause();
 
+    // Inicjalizowanie konduktora.
     const int conductor_pid = init_conductor();
 
     // 1 BAGGAGE 2 BIKE
@@ -221,12 +229,15 @@ void arrive_and_depart() {
     args_2->this = this;
     args_2->params = params;
 
+    // Tworzenie wątków drzwi.
     if (pthread_create(&id_thread_door_1, NULL, open_doors, args_1)) throw_error(PROCESS_NAME, "Thread 1 Creation");
     if (pthread_create(&id_thread_door_2, NULL, open_doors, args_2)) throw_error(PROCESS_NAME, "Thread 2 Creation");
 
+    // Oczekiwanie na sygnał odjazdu.
     if (wait_for_signal(SIGUSR1) == IPC_ERROR) throw_error(PROCESS_NAME, "Signal Wait Error");
     received_depart_signal = 1;
 
+    // Wysyłanie sygnału do sekcji message_queue_receive żeby przerwać oczekiwanie.
     struct message poison_message;
     poison_message.mtype = MSG_TYPE_FULL;
     message_queue_send(params->msg_id_td_1, &poison_message);
@@ -237,12 +248,15 @@ void arrive_and_depart() {
     if (pthread_join(id_thread_door_1, NULL)) throw_error(PROCESS_NAME, "Thread 1 Join");
     if (pthread_join(id_thread_door_2, NULL)) throw_error(PROCESS_NAME, "Thread 2 Join");
 
+    // Podnoszenie semaforu dla kondutkora.
     sem_post(params->sem_id_c, 0);
     sem_wait(params->sem_id_c, 1, 0);
 
+    // Kończenie procesu konduktora.
     if (kill(conductor_pid, SIGKILL) == IPC_ERROR) throw_error(PROCESS_NAME, "Sigkill Error");
     if (waitpid(conductor_pid, NULL, 0) == -1) throw_error(PROCESS_NAME, "Waitpid Error");
 
+    // Kończenie procesów pasażerów którzy odjeżdzają.
     for (int i = 0; i < params->stack_1->top; i++) {
         kill(params->stack_1->data[i], SIGTERM);
         log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_1->data[i]);
@@ -265,7 +279,8 @@ void arrive_and_depart() {
     params->stack_1->top = 0;
     params->stack_2->top = 0;
 
-    sem_post(params->sem_id_sm, 2); // sem 3 departure signal
+    // Podnoszenie semafora o odjeździe.
+    sem_post(params->sem_id_sm, 2);
 
     free(args_1);
     free(args_2);
