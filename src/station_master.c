@@ -82,17 +82,17 @@ void handle_train() {
 
     if (kill(train_id, SIGCONT) == IPC_ERROR) throw_error(PROCESS_NAME, "SIGCONT Error");
 
-    log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has arrived!\n", train_id);
+    log_warning(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has arrived!\n", train_id);
 
     sleep(TRAIN_DEPART_TIME);
 
-    log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d is ready to depart!\n", train_id);
+    log_warning(PROCESS_NAME, "[ANNOUNCEMENT] Train %d is ready to depart!\n", train_id);
 
     if (kill(train_id, SIGUSR1) == IPC_ERROR) throw_error(PROCESS_NAME, "SIGUSR1 Error");
 
     sem_wait(params->sem_id_sm, 2, 0);
 
-    log_message(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has departed!\n", train_id);
+    log_warning(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has departed!\n", train_id);
 
     sem_post(params->sem_id_sm, 0);
 
@@ -105,7 +105,7 @@ void *close_platform(void *_args) {
     const struct thread_args *args = _args;
 
     sleep(PLATFORM_CLOSE_AFTER);
-    log_message(PROCESS_NAME, "[INFO] Closing Platform!\n");
+    log_warning(PROCESS_NAME, "[INFO] Closing Platform!\n");
     kill(args->platform_id, SIGUSR2);
 
     platform_closed = 1;

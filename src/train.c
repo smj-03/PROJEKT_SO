@@ -83,57 +83,6 @@ void handle_sigcont(int sig) {
     has_arrived = 1;
 }
 
-void init_params() {
-    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    params->mutex = &mutex;
-
-    const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_GET);
-    if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
-    params->sem_id_td = sem_id_td;
-
-    const int sem_id_c = sem_alloc(SEM_CONDUCTOR_KEY, 2, IPC_GET);
-    if (sem_id_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
-    params->sem_id_c = sem_id_c;
-
-    int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
-    if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    params->shared_memory_td_1 = shared_memory_1;
-
-    int *shared_memory_2 = shared_block_attach(SHM_TRAIN_DOOR_2_KEY, (TRAIN_B_LIMIT + 2) * sizeof(int));
-    if (shared_memory_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    params->shared_memory_td_2 = shared_memory_2;
-
-    const int msg_id_td_1 = message_queue_alloc(MSG_TRAIN_DOOR_1_KEY,IPC_GET);
-    if (msg_id_td_1 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
-    params->msg_id_td_1 = msg_id_td_1;
-
-    const int msg_id_td_2 = message_queue_alloc(MSG_TRAIN_DOOR_2_KEY,IPC_GET);
-    if (msg_id_td_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
-    params->msg_id_td_2 = msg_id_td_2;
-
-    struct passenger_stack *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack));
-    if (stack_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    stack_1->top = 0;
-    params->stack_1 = stack_1;
-
-    struct passenger_stack *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack));
-    if (stack_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    stack_2->top = 0;
-    params->stack_2 = stack_2;
-
-    const int sem_id_sm = sem_alloc(SEM_STATION_MASTER_KEY, 3, IPC_GET);
-    if (sem_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
-    params->sem_id_sm = sem_id_sm;
-
-    int *shared_memory = shared_block_attach(SHM_STATION_MASTER_TRAIN_KEY, (TRAIN_NUM + 2) * sizeof(int));
-    if (shared_memory == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
-    params->shared_memory_sm = shared_memory;
-
-    const int msg_id_sm = message_queue_alloc(MSG_STATION_MASTER_KEY,IPC_GET);
-    if (msg_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
-    params->msg_id_sm = msg_id_sm;
-}
-
 void init_train() {
     this->id = getpid();
     this->passenger_count = 0;
@@ -220,7 +169,7 @@ void *open_doors(void *_args) {
     }
 
     if (this->passenger_count == TRAIN_MAX_CAPACITY)
-        log_message(PROCESS_NAME, "[%d][INFO] Train is full! Doors %d have closed!\n", this->id, args->door_number + 1);
+        log_warning(PROCESS_NAME, "[%d][INFO] Train is full! Doors %d have closed!\n", this->id, args->door_number + 1);
 
     if (!handled_depart_signal && this->passenger_count < TRAIN_MAX_CAPACITY) {
         struct message poison_message;
@@ -278,7 +227,6 @@ void arrive_and_depart() {
     poison_message.mtype = MSG_TYPE_FULL;
     message_queue_send(params->msg_id_td_1, &poison_message);
     message_queue_send(params->msg_id_td_2, &poison_message);
-    log_message(PROCESS_NAME, "[INFO] Departure signal received: %d\n", received_depart_signal);
 
     has_arrived = 0;
 
@@ -321,3 +269,55 @@ void arrive_and_depart() {
 
     sleep(this->return_interval);
 }
+
+void init_params() {
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    params->mutex = &mutex;
+
+    const int sem_id_td = sem_alloc(SEM_TRAIN_DOOR_KEY, SEM_TRAIN_DOOR_NUM, IPC_GET);
+    if (sem_id_td == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
+    params->sem_id_td = sem_id_td;
+
+    const int sem_id_c = sem_alloc(SEM_CONDUCTOR_KEY, 2, IPC_GET);
+    if (sem_id_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
+    params->sem_id_c = sem_id_c;
+
+    int *shared_memory_1 = shared_block_attach(SHM_TRAIN_DOOR_1_KEY, (TRAIN_P_LIMIT + 2) * sizeof(int));
+    if (shared_memory_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    params->shared_memory_td_1 = shared_memory_1;
+
+    int *shared_memory_2 = shared_block_attach(SHM_TRAIN_DOOR_2_KEY, (TRAIN_B_LIMIT + 2) * sizeof(int));
+    if (shared_memory_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    params->shared_memory_td_2 = shared_memory_2;
+
+    const int msg_id_td_1 = message_queue_alloc(MSG_TRAIN_DOOR_1_KEY,IPC_GET);
+    if (msg_id_td_1 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
+    params->msg_id_td_1 = msg_id_td_1;
+
+    const int msg_id_td_2 = message_queue_alloc(MSG_TRAIN_DOOR_2_KEY,IPC_GET);
+    if (msg_id_td_2 == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
+    params->msg_id_td_2 = msg_id_td_2;
+
+    struct passenger_stack *stack_1 = shared_block_attach(SHM_TRAIN_STACK_1_KEY, sizeof(struct passenger_stack));
+    if (stack_1 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    stack_1->top = 0;
+    params->stack_1 = stack_1;
+
+    struct passenger_stack *stack_2 = shared_block_attach(SHM_TRAIN_STACK_2_KEY, sizeof(struct passenger_stack));
+    if (stack_2 == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    stack_2->top = 0;
+    params->stack_2 = stack_2;
+
+    const int sem_id_sm = sem_alloc(SEM_STATION_MASTER_KEY, 3, IPC_GET);
+    if (sem_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation Error");
+    params->sem_id_sm = sem_id_sm;
+
+    int *shared_memory = shared_block_attach(SHM_STATION_MASTER_TRAIN_KEY, (TRAIN_NUM + 2) * sizeof(int));
+    if (shared_memory == NULL) throw_error(PROCESS_NAME, "Shared Memory Attach Error");
+    params->shared_memory_sm = shared_memory;
+
+    const int msg_id_sm = message_queue_alloc(MSG_STATION_MASTER_KEY,IPC_GET);
+    if (msg_id_sm == IPC_ERROR) throw_error(PROCESS_NAME, "Message Queue Allocation Error");
+    params->msg_id_sm = msg_id_sm;
+}
+

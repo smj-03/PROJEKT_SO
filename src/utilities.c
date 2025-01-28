@@ -6,6 +6,7 @@
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
 
 int log_message(const char *_process_name, const char *_format, ...) {
     const time_t now = time(NULL);
@@ -18,6 +19,32 @@ int log_message(const char *_process_name, const char *_format, ...) {
 
     fprintf(stdout, "[%s%s%s] ",
             ANSI_COLOR_GREEN,
+            _process_name,
+            ANSI_COLOR_RESET);
+
+    va_list args;
+    va_start(args, _format);
+
+    const int result = vfprintf(stdout, _format, args);
+
+    va_end(args);
+
+    fflush(stdout);
+
+    return result;
+}
+
+int log_warning(const char *_process_name, const char *_format, ...) {
+    const time_t now = time(NULL);
+    const struct tm *local_time = localtime(&now);
+
+    fprintf(stdout, "[%02d:%02d:%02d]",
+            local_time->tm_hour,
+            local_time->tm_min,
+            local_time->tm_sec);
+
+    fprintf(stdout, "[%s%s%s] ",
+            ANSI_COLOR_YELLOW,
             _process_name,
             ANSI_COLOR_RESET);
 

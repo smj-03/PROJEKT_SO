@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     init_params(params);
 
     sem_wait(params->sem_id_c, 0, 0);
-    log_message(PROCESS_NAME, "[%d][INFO] The doors have closed!\n", getppid());
+    log_warning(PROCESS_NAME, "[%d][INFO] The doors have closed!\n", getppid());
 
     kick_passengers(params);
 
