@@ -187,9 +187,6 @@ void *open_doors(void *_args) {
             throw_error(PROCESS_NAME, "Message Receive Error");
 
         if (received_depart_signal) {
-            message.mtype = MSG_TYPE_EMPTY;
-            if (message_queue_send(msg_id, &message) == IPC_ERROR)
-                throw_error(PROCESS_NAME, "Message Send Error");
             handled_depart_signal = 1;
             continue;
         }
@@ -237,10 +234,6 @@ void *open_doors(void *_args) {
         const int msg_id = args->door_number ? params->msg_id_td_2 : params->msg_id_td_1;
         if (message_queue_receive(msg_id, &poison_message, MSG_TYPE_FULL, 0) == IPC_ERROR)
             throw_error(PROCESS_NAME, "Message Receive Error");
-
-        poison_message.mtype = MSG_TYPE_EMPTY;
-        if (message_queue_send(msg_id, &poison_message) == IPC_ERROR)
-            throw_error(PROCESS_NAME, "Message Send Error");
         handled_depart_signal = 1;
     }
 }
