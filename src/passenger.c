@@ -65,7 +65,8 @@ int main() {
         pause();
         if (!terminate) {
             log_warning(PROCESS_NAME, "[EXIT] ID: %d\n", getpid());
-            board_train(this, params);
+            init_params(); // Żeby ponownie dodać blok pamięci.
+            board_train();
         }
     }
 }
@@ -139,7 +140,6 @@ void board_train() {
         throw_error(PROCESS_NAME, "Message Receive Error");
 
     // Wsiadanie
-    // FIXME: Czasami się nie zapisuje poprawnie.
     sem_wait(params->sem_id_td, this->has_bike, 0);
 
     int *shared_memory = this->has_bike ? params->shared_memory_td_2 : params->shared_memory_td_1;
