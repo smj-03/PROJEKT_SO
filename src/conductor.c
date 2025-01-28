@@ -24,11 +24,14 @@ int main(int argc, char *argv[]) {
 
     init_params(params);
 
+    // Oczekiwanie na semafor do rozpoczęcia działania.
     sem_wait(params->sem_id_c, 0, 0);
     log_warning(PROCESS_NAME, "[%d][INFO] The doors have closed!\n", getppid());
 
+    // Wyrzucanie nadmiaru pasażerów z pociągu.
     kick_passengers(params);
 
+    // Kończenie działania.
     sem_post(params->sem_id_c, 1);
 
     free(params);
@@ -39,6 +42,9 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/**
+ * Inicjalizacja parametrów IPC.
+ */
 void init_params() {
     const int sem_id_c = sem_alloc(SEM_CONDUCTOR_KEY, 2, IPC_GET);
     if (sem_id_c == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
@@ -55,6 +61,9 @@ void init_params() {
     params->stack_2 = stack_2;
 }
 
+/**
+ * Wyrzucanie nadmiaru pasażerów z pociągu.
+ */
 void kick_passengers() {
     const int bikes_to_exit = params->stack_2->top - TRAIN_B_LIMIT;
     if (params->stack_2->top > TRAIN_B_LIMIT)

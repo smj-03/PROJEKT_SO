@@ -30,11 +30,17 @@
 #define MSG_TYPE_EMPTY 1
 #define MSG_TYPE_FULL 2
 
+/**
+* Struktura do kolejki komunikatów.
+*/
 struct message {
     long int mtype;
     int mvalue;
 };
 
+/**
+* Struktura stosu pasażerów.
+*/
 struct passenger_stack {
     int top;
     int data[TRAIN_MAX_CAPACITY];
@@ -85,7 +91,5 @@ int wait_for_signal(int signal);
 int push(struct passenger_stack *stack, int value);
 
 int pop(struct passenger_stack *stack);
-
-_Bool has(int arr[], int value, int length);
 
 #endif //UTILITIES_H

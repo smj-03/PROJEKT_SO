@@ -5,12 +5,6 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-add_custom_target(rm_ipc_ids ALL
-        COMMAND ${CMAKE_COMMAND} -E echo "Running Bash script..."
-        COMMAND bash ${CMAKE_SOURCE_DIR}/rm_ipc_ids.sh
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
-
 include_directories(include)
 
 set(EXECUTABLES
@@ -43,5 +37,3 @@ foreach(exe ${EXECUTABLES})
     endif()
     add_dependencies(MAIN ${exe})
 endforeach()
-
-add_dependencies(MAIN rm_ipc_ids)
