@@ -131,13 +131,14 @@ void init_passenger() {
 }
 
 void board_train() {
+    sem_wait_no_op(params->sem_id_sm, 0, 0);
     // Wysłanie informacji do pociągu o gotowości do wsiadania.
     struct message message;
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
     if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR)
         throw_error(PROCESS_NAME, "Message Receive Error");
 
-    // log_warning(PROCESS_NAME, "Message received %d\n", this->id);
+    log_warning(PROCESS_NAME, "Message received %d\n", this->id);
 
     // Wsiadanie
     // FIXME: Czasami się nie zapisuje poprawnie.
