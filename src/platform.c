@@ -21,15 +21,18 @@ void spawn_passenger();
 int main(int argc, char *argv[]) {
     if(VERBOSE_LOGS) log_message(PROCESS_NAME, "[INIT] ID: %d\n", getpid());
 
+    // Ustawienie sygnału do zatrzymania tworzenia pasażerów.
     setup_signal_handler(SIGUSR2, handle_sigusr2);
 
     srand(time(NULL));
 
+    // Wątek czyszczący pasażerów zombie.
     pthread_t clean_thread_id;
     if (pthread_create(&clean_thread_id, NULL, clear_passengers, NULL))
         throw_error(PROCESS_NAME, "Thread Creation");
 
     while (platform_open) {
+        // Tworzenie pasażerów w losowych odstępach czasu oraz losowej ilości.
         const int interval = get_random_number(PASSENGER_MIN_INTERVAL, PASSENGER_MAX_INTERVAL);
 
         int concurrent_passengers = 1;
@@ -45,6 +48,7 @@ int main(int argc, char *argv[]) {
     const int sem_id = sem_alloc(SEM_PLATFORM_KEY, 1, IPC_GET);
     if (sem_id == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Allocation");
 
+    // Oczekiwanie na semafor o zakończeniu pracy (STATION MASTER 65).
     if (sem_wait(sem_id, 0, 0) == IPC_ERROR) throw_error(PROCESS_NAME, "Semaphore Wait Error");
 
     if (pthread_join(clean_thread_id, NULL)) throw_error(PROCESS_NAME, "Thread Join");

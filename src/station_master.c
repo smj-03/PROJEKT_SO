@@ -49,11 +49,13 @@ int main(int argc, char *argv[]) {
     if (close_args == NULL) throw_error(PROCESS_NAME, "Thread Arguments Creation");
     close_args->platform_id = platform_id;
 
+    // Wątek do czekania na zamknięcie peronu.
     if (pthread_create(&close_thread_id, NULL, close_platform, close_args))
         throw_error(PROCESS_NAME, "Thread 1 Creation");
 
     const int *passenger_counter = params->shared_memory_counter;
 
+    // Obsługa pociągów.
     while (!platform_closed || passenger_counter[0]) {
         log_message(PROCESS_NAME, "[INFO] Passengers on the platform: %d\n", params->shared_memory_counter[0]);
         handle_train(params);
@@ -61,6 +63,7 @@ int main(int argc, char *argv[]) {
     }
     log_message(PROCESS_NAME, "[INFO] Passengers on the platform: %d\n", params->shared_memory_counter[0]);
 
+    // Zakończenie programu
     kill_all_trains(train_ids);
     sem_post(params->sem_id_p, 0);
 
@@ -80,6 +83,7 @@ void handle_train() {
     const int train_id = shared_memory[read];
     shared_memory[TRAIN_NUM] = (shared_memory[TRAIN_NUM] + 1) % TRAIN_NUM;
 
+    // Wysłanie informacji do pociągu o gotowości do przyjazdu.
     if (kill(train_id, SIGCONT) == IPC_ERROR) throw_error(PROCESS_NAME, "SIGCONT Error");
 
     log_warning(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has arrived!\n", train_id);
@@ -88,8 +92,10 @@ void handle_train() {
 
     log_warning(PROCESS_NAME, "[ANNOUNCEMENT] Train %d is ready to depart!\n", train_id);
 
+    // Wysyłanie informacji do pociągu o gotowości do odjazdu.
     if (kill(train_id, SIGUSR1) == IPC_ERROR) throw_error(PROCESS_NAME, "SIGUSR1 Error");
 
+    // Czekanie aż konduktor zamknie drzwi.
     sem_wait(params->sem_id_sm, 2, 0);
 
     log_warning(PROCESS_NAME, "[ANNOUNCEMENT] Train %d has departed!\n", train_id);

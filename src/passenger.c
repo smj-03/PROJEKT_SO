@@ -6,6 +6,8 @@
 
 #define PROCESS_NAME "PASSENGER"
 
+volatile sig_atomic_t terminate = 0;
+
 struct passenger {
     int id;
     _Bool has_bike;
@@ -50,16 +52,21 @@ int main() {
 
     init_passenger();
 
+    // Zwiększenie liczby pasażerów na peronie.
     increase_counter();
 
     log_message(PROCESS_NAME, "[ARRIVAL] ID: %d BIKE: %d\n", this->id, this->has_bike);
 
+    // Wsiadanie do pociągu.
     board_train();
 
-    while (1) {
+    while (!terminate) {
+        // W wypadku SIGUSR1 od konduktora pasażer wychodzi z pociągu i ponownie czeka na wiąście do pociągu.
         pause();
-        log_warning(PROCESS_NAME, "[EXIT] ID: %d\n", getpid());
-        board_train(this, params);
+        if (!terminate) {
+            log_warning(PROCESS_NAME, "[EXIT] ID: %d\n", getpid());
+            board_train(this, params);
+        }
     }
 }
 
@@ -68,13 +75,14 @@ void handle_sigusr1(int sig) {
 }
 
 void handle_sigterm(int) {
+    // Zmniejszenie liczby pasażerów na peronie przy odjeździe.
+    terminate = 1;
     decrease_counter();
     shared_block_detach(params->shared_memory_td_1);
     shared_block_detach(params->shared_memory_td_2);
     shared_block_detach(params->shared_memory_counter);
     free(params);
     free(this);
-    _exit(0);
 }
 
 void init_params() {
@@ -122,8 +130,7 @@ void init_passenger() {
 }
 
 void board_train() {
-    sem_wait_no_op(params->sem_id_sm, 0, 0);
-
+    // Wysłanie informacji do pociągu o gotowości do wsiadania.
     struct message message;
     const int msg_id = this->has_bike ? params->msg_id_td_2 : params->msg_id_td_1;
     if (message_queue_receive(msg_id, &message, MSG_TYPE_EMPTY, 0) == IPC_ERROR)
@@ -133,6 +140,7 @@ void board_train() {
     const int limit = this->has_bike ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
     const int save = shared_memory[limit + 1];
 
+    // Wsiadanie
     sem_wait(params->sem_id_td, this->has_bike, 0);
     shared_memory[save] = this->id;
     shared_memory[limit + 1] = (save + 1) % limit;
@@ -142,12 +150,18 @@ void board_train() {
     if (message_queue_send(msg_id, &message) == IPC_ERROR) throw_error(PROCESS_NAME, "Message Send Error");
 }
 
+/**
+ * Funkcja zwiększająca licznik pasażerów na peronie.
+ */
 void increase_counter() {
     sem_wait(params->sem_id_pc, 0, 0);
     params->shared_memory_counter[0]++;
     sem_post(params->sem_id_pc, 0);
 }
 
+/**
+ * Funkcja zmniejszająca licznik pasażerów na peronie.
+ */
 void decrease_counter() {
     sem_wait(params->sem_id_pc, 0, 0);
     params->shared_memory_counter[0]--;

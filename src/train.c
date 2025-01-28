@@ -114,11 +114,15 @@ int init_conductor() {
     }
 }
 
+/**
+ * Funkcja wątku otwierającego drzwi pociągu.
+ * @param _args
+ * @return
+ */
 void *open_doors(void *_args) {
     const struct thread_args *args = _args;
     const struct params *params = args->params;
     struct train *this = args->this;
-    if (VERBOSE_LOGS) (PROCESS_NAME, "[THREAD] Doors %d\n", args->door_number + 1);
 
     int handled_depart_signal = 0;
 
@@ -137,16 +141,17 @@ void *open_doors(void *_args) {
         int *shared_memory = args->door_number ? params->shared_memory_td_2 : params->shared_memory_td_1;
         const int limit = args->door_number ? TRAIN_B_LIMIT : TRAIN_P_LIMIT;
 
-        // CRITICAL SECTION - SHARED MEMORY
+        // Sekcja krtytyczna
         sem_wait(params->sem_id_td, args->door_number, 0);
 
         const int read = shared_memory[limit];
         const int passenger_id = shared_memory[read];
         shared_memory[limit] = (shared_memory[limit] + 1) % limit;
 
+        sleep(PASSENGER_BOARDING_TIME);
+
         pthread_mutex_lock(params->mutex);
 
-        // TODO: ADD SEMAPHORE?
         this->passenger_count++;
         if (args->door_number == 0) {
             if (push(params->stack_1, passenger_id) == -1) throw_error(PROCESS_NAME, "Stack Push Error");
@@ -157,7 +162,6 @@ void *open_doors(void *_args) {
         pthread_mutex_unlock(params->mutex);
         sem_post(params->sem_id_td, args->door_number);
 
-        sleep(PASSENGER_BOARDING_TIME);
         log_message(PROCESS_NAME,
                     "[%d][DOOR %d] Welcome Passenger %d!\n",
                     this->id,
@@ -239,7 +243,6 @@ void arrive_and_depart() {
     if (kill(conductor_pid, SIGKILL) == IPC_ERROR) throw_error(PROCESS_NAME, "Sigkill Error");
     if (waitpid(conductor_pid, NULL, 0) == -1) throw_error(PROCESS_NAME, "Waitpid Error");
 
-    // TODO: CLEAN PASSENGERS, STACK ETC.
     for (int i = 0; i < params->stack_1->top; i++) {
         kill(params->stack_1->data[i], SIGTERM);
         log_message(PROCESS_NAME, "[INFO] Passenger %d is on the way!\n", params->stack_1->data[i]);
